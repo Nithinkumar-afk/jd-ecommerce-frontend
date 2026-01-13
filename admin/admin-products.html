@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin – Products | JD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Poppins',sans-serif;
+  background:radial-gradient(circle at top,#0b0b0b,#000);
+  color:#e5e7eb;
+}
+
+header{
+  padding:18px 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:rgba(20,20,20,.85);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+header h2{margin:0;font-size:18px}
+header button{
+  padding:10px 18px;
+  border-radius:14px;
+  border:none;
+  background:#2563eb;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.form{
+  margin:18px;
+  padding:18px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;
+  background:rgba(255,255,255,.05);
+  border-radius:22px;
+}
+input,textarea{
+  padding:13px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background:#000;
+  color:#fff;
+}
+textarea{grid-column:1/-1}
+.form button{
+  grid-column:1/-1;
+  padding:15px;
+  border-radius:16px;
+  border:none;
+  background:#22c55e;
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.products{
+  padding:18px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:18px;
+}
+.card{
+  background:rgba(255,255,255,.06);
+  border-radius:22px;
+  padding:14px;
+}
+.card img{
+  width:100%;
+  height:150px;
+  object-fit:cover;
+  border-radius:16px;
+}
+.card button{
+  margin-top:10px;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:14px;
+  background:#ef4444;
+  color:#fff;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>JD Product Management</h2>
+  <button onclick="goBack()">Dashboard</button>
+</header>
+
+<div class="form">
+  <input id="name" placeholder="Product name">
+  <input id="price" type="number" placeholder="Price">
+  <input id="category" placeholder="Category">
+  <input id="img1" placeholder="Image URL 1">
+  <input id="img2" placeholder="Image URL 2">
+  <input id="img3" placeholder="Image URL 3">
+  <textarea id="desc" rows="3" placeholder="Description"></textarea>
+  <button id="addBtn">Add Product</button>
+</div>
+
+<div class="products" id="list"></div>
+
+<script>
+/* ================= CONFIG ================= */
+const API_BASE = "http://localhost:5000/api";
+const PRODUCTS_API = API_BASE + "/products";
+const token = localStorage.getItem("adminToken");
+
+if (!token) location.href = "admin-login.html";
+
+/* ================= ELEMENTS ================= */
+const list = document.getElementById("list");
+const addBtn = document.getElementById("addBtn");
+
+const nameInput = document.getElementById("name");
+const priceInput = document.getElementById("price");
+const categoryInput = document.getElementById("category");
+const img1Input = document.getElementById("img1");
+const img2Input = document.getElementById("img2");
+const img3Input = document.getElementById("img3");
+const descInput = document.getElementById("desc");
+
+/* ================= LOAD PRODUCTS ================= */
+async function loadProducts() {
+  const res = await fetch(PRODUCTS_API);
+  const products = await res.json();
+
+  list.innerHTML = "";
+
+  products.forEach(p => {
+    const imgs = Array.isArray(p.images) ? p.images : [];
+    list.innerHTML += `
+      <div class="card">
+        <img src="${imgs[0] || ''}">
+        <h4>${p.name}</h4>
+        <p>₹${p.price}</p>
+        <small>${p.category}</small>
+        <button onclick="deleteProduct(${p.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+/* ================= ADD PRODUCT ================= */
+addBtn.onclick = async () => {
+  const payload = {
+    name: nameInput.value.trim(),
+    price: Number(priceInput.value),
+    category: categoryInput.value.trim(),
+    description: descInput.value.trim(),
+    images: [img1Input.value, img2Input.value, img3Input.value].filter(Boolean)
+  };
+
+  if (!payload.name || !payload.price || !payload.category || !payload.images.length) {
+    alert("Fill all required fields");
+    return;
+  }
+
+  console.log("➡️ ADD PRODUCT:", payload);
+
+  const res = await fetch(PRODUCTS_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  console.log("⬅️ RESPONSE:", res.status, data);
+
+  if (!res.ok) {
+    alert(data.message || "Add failed");
+    return;
+  }
+
+  alert("✅ Product added");
+  clearForm();
+  loadProducts();
+};
+
+/* ================= DELETE ================= */
+async function deleteProduct(id) {
+  if (!confirm("Delete product?")) return;
+
+  const res = await fetch(`${PRODUCTS_API}/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  if (res.ok) loadProducts();
+}
+
+/* ================= HELPERS ================= */
+function clearForm() {
+  [nameInput, priceInput, categoryInput, img1Input, img2Input, img3Input, descInput]
+    .forEach(i => i.value = "");
+}
+
+function goBack() {
+  location.href = "admin-dashboard.html";
+}
+
+/* ================= INIT ================= */
+loadProducts();
+</script>
+
+</body>
+</html>
