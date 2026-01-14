@@ -117,20 +117,30 @@ header button:hover{background:#dc2626}
   </div>
 
 </div>
-
 <script>
 "use strict";
 
 /* ======================
-   ✅ PRODUCTION CONFIG
+   CONFIG
 ====================== */
 const API_BASE = "https://shopx-production-b1ad.up.railway.app";
+
+/* ======================
+   DOM ELEMENTS (FIX)
+====================== */
+const totalProducts = document.getElementById("totalProducts");
+const totalOrders   = document.getElementById("totalOrders");
+const totalUsers    = document.getElementById("totalUsers");
+const totalRevenue  = document.getElementById("totalRevenue");
+const recentOrders  = document.getElementById("recentOrders");
 
 /* ======================
    AUTH GUARD
 ====================== */
 const token = localStorage.getItem("adminToken");
-if (!token) location.replace("admin-login.html");
+if (!token) {
+  location.replace("/admin/admin-login.html");
+}
 
 /* ======================
    AUTH FETCH
@@ -170,16 +180,18 @@ function timeAgo(dateString) {
 /* ======================
    LOAD DASHBOARD
 ====================== */
-(async () => {
+(async function loadDashboard() {
   try {
+    /* ---- STATS ---- */
     const stats = await authFetch("/api/admin/stats");
-    totalProducts.innerText = stats.products;
-    totalOrders.innerText = stats.orders;
-    totalUsers.innerText = stats.users;
-    totalRevenue.innerText = "₹" + stats.revenue;
 
+    totalProducts.textContent = stats.products;
+    totalOrders.textContent   = stats.orders;
+    totalUsers.textContent    = stats.users;
+    totalRevenue.textContent  = "₹" + stats.revenue;
+
+    /* ---- RECENT ORDERS ---- */
     const orders = await authFetch("/api/admin/recent-orders");
-    const recentOrders = document.getElementById("recentOrders");
 
     if (!orders || orders.length === 0) {
       recentOrders.innerHTML = "<p>No recent orders</p>";
@@ -188,7 +200,7 @@ function timeAgo(dateString) {
 
     recentOrders.innerHTML = orders.map(o => `
       <div class="order">
-        <strong>${o.name ?? "Guest"}</strong>
+        <strong>${o.name || "Guest"}</strong>
         <small>
           ₹${o.total} • ${timeAgo(o.created_at)}
         </small>
@@ -197,7 +209,7 @@ function timeAgo(dateString) {
 
   } catch (err) {
     console.error(err);
-    document.getElementById("recentOrders").innerHTML =
+    recentOrders.innerHTML =
       "<p style='color:#f87171'>Failed to load orders</p>";
   }
 })();
@@ -208,9 +220,10 @@ function timeAgo(dateString) {
 function logout() {
   forceLogout();
 }
+
 function forceLogout() {
   localStorage.removeItem("adminToken");
-  location.replace("admin-login.html");
+  location.replace("/admin/admin-login.html");
 }
 </script>
 
