@@ -1,17 +1,20 @@
 [build]
   publish = "."
 
+# Root → User login
 [[redirects]]
   from = "/"
-  to = "/user/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/login"
   to = "/user/login.html"
   status = 200
 
+# User pages (prevent 404 on refresh)
 [[redirects]]
-  from = "/admin"
-  to = "/admin/admin-login.html"
+  from = "/user/*"
+  to = "/user/:splat"
+  status = 200
+
+# Admin pages (prevent 404 on refresh)
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat"
   status = 200
