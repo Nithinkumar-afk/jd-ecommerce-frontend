@@ -98,17 +98,17 @@ textarea{grid-column:1/-1}
 
 <header>
   <h2>JD Product Management</h2>
-  <button onclick="goBack()">Dashboard</button>
+  <button onclick="location.href='admin-dashboard.html'">Dashboard</button>
 </header>
 
 <div class="form">
   <input id="name" placeholder="Product name">
   <input id="price" type="number" placeholder="Price">
   <input id="category" placeholder="Category">
-  <input id="img1" placeholder="Image URL 1">
-  <input id="img2" placeholder="Image URL 2">
-  <input id="img3" placeholder="Image URL 3">
-  <textarea id="desc" rows="3" placeholder="Description"></textarea>
+  <input id="img1" placeholder="Image URL 1 (optional)">
+  <input id="img2" placeholder="Image URL 2 (optional)">
+  <input id="img3" placeholder="Image URL 3 (optional)">
+  <textarea id="desc" rows="3" placeholder="Description (optional)"></textarea>
   <button id="addBtn">Add Product</button>
 </div>
 
@@ -120,6 +120,9 @@ const PRODUCTS_API = API_BASE + "/products";
 const token = localStorage.getItem("adminToken");
 
 if (!token) location.href = "admin-login.html";
+
+const FALLBACK_IMAGE =
+  "https://via.placeholder.com/600x400?text=No+Image";
 
 /* ELEMENTS */
 const list = document.getElementById("list");
@@ -140,10 +143,13 @@ async function loadProducts() {
 
   list.innerHTML = "";
   products.forEach(p => {
-    const imgs = Array.isArray(p.images) ? p.images : [];
+    const imgs = Array.isArray(p.images) && p.images.length
+      ? p.images
+      : [FALLBACK_IMAGE];
+
     list.innerHTML += `
       <div class="card">
-        <img src="${imgs[0] || ''}">
+        <img src="${imgs[0]}" onerror="this.src='${FALLBACK_IMAGE}'">
         <h4>${p.name}</h4>
         <p>₹${p.price}</p>
         <small>${p.category}</small>
@@ -163,8 +169,8 @@ addBtn.onclick = async () => {
     images: [img1Input.value, img2Input.value, img3Input.value].filter(Boolean)
   };
 
-  if (!payload.name || !payload.price || !payload.category || !payload.images.length) {
-    alert("Fill all required fields");
+  if (!payload.name || !payload.price || !payload.category) {
+    alert("Name, price and category are required");
     return;
   }
 
@@ -203,7 +209,6 @@ function clearForm() {
 
 loadProducts();
 </script>
-
 
 </body>
 </html>
