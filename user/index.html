@@ -11,7 +11,6 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Poppins,sans-serif;background:black;color:white}
 
-/* BASIC LAYOUT (SAFE DEFAULTS) */
 header{
   display:flex;
   align-items:center;
@@ -91,7 +90,8 @@ header{
 <body>
 
 <header>
-  <div class="logo" onclick="location.href='/'">
+  <!-- Root goes to user home -->
+  <div class="logo" onclick="location.href='/user/index.html'">
     <span>J</span><span>D</span>
   </div>
 
@@ -110,14 +110,14 @@ header{
       <strong id="dropName">User</strong><br>
       <small id="dropEmail">user@email.com</small>
       <hr>
-      <a href="user/profile.html">👤 Profile</a>
-      <a href="user/orders.html">📦 Orders</a>
-      <a href="user/wishlist.html">❤️ Wishlist</a>
+      <a href="profile.html">👤 Profile</a>
+      <a href="orders.html">📦 Orders</a>
+      <a href="wishlist.html">❤️ Wishlist</a>
       <hr>
       <a href="#" onclick="logout()">🚪 Logout</a>
     </div>
 
-    <button onclick="location.href='user/cart.html'">
+    <button onclick="location.href='cart.html'">
       Cart (<span id="cartCount">0</span>)
     </button>
   </div>
@@ -142,14 +142,14 @@ const user = JSON.parse(localStorage.getItem("loggedInUser"));
 const token = localStorage.getItem("token");
 
 if (!user || !token) {
-  location.href = "user/login.html";
+  location.replace("/user/login.html");
 }
 
 /* ================= USER UI ================= */
 document.getElementById("userName").textContent = user.name || "User";
 document.getElementById("dropName").textContent = user.name || "User";
 document.getElementById("dropEmail").textContent = user.email || "";
-document.getElementById("avatar").textContent = (user.name||"U")[0].toUpperCase();
+document.getElementById("avatar").textContent = (user.name || "U")[0].toUpperCase();
 
 /* ================= STATE ================= */
 let products = [];
@@ -170,7 +170,7 @@ document.addEventListener("click",()=>menu.style.display="none");
 /* ================= LOGOUT ================= */
 function logout(){
   localStorage.clear();
-  location.href = "user/login.html";
+  location.replace("/user/login.html");
 }
 
 /* ================= TOAST ================= */
@@ -218,7 +218,7 @@ function renderProducts(){
     const wish=wishlist.some(w=>w.id===p.id);
 
     pDiv.innerHTML+=`
-      <div class="product" onclick="location.href='user/product.html?id=${p.id}'">
+      <div class="product" onclick="location.href='product.html?id=${p.id}'">
         <button class="wishlist-btn ${wish?'active':''}"
           onclick="event.stopPropagation();toggleWish(${p.id})">❤️</button>
         <img src="${img}" onerror="this.src='${FALLBACK}'">
