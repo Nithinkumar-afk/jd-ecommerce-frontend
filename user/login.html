@@ -91,11 +91,11 @@ body{
     <input id="name" placeholder="Full Name">
     <input id="email" type="email" placeholder="Email Address">
 
-    <button onclick="sendOTP()">Send OTP</button>
+    <button type="button" onclick="sendOTP()">Send OTP</button>
 
     <div id="otpBox" class="hidden">
-      <input id="otp" type="number" placeholder="Enter OTP">
-      <button onclick="verifyOTP()">Verify & Continue</button>
+      <input id="otp" type="text" placeholder="Enter OTP">
+      <button type="button" onclick="verifyOTP()">Verify & Continue</button>
     </div>
 
     <div class="note">OTP will be sent to your email</div>
@@ -107,14 +107,15 @@ body{
 /* SPLASH */
 window.addEventListener("load", () => {
   setTimeout(() => {
-    document.getElementById("splash")?.classList.add("hide");
+    const splash = document.getElementById("splash");
+    if (splash) splash.classList.add("hide");
   }, 1500);
 });
 
 /* ✅ PRODUCTION BACKEND */
 const API_BASE = "https://shopx-production-b1ad.up.railway.app";
 
-/* ✅ AUTO REDIRECT IF LOGGED IN */
+/* AUTO REDIRECT */
 if (localStorage.getItem("token")) {
   window.location.href = "/user/index.html";
 }
@@ -153,7 +154,7 @@ async function sendOTP(){
     showAlert("OTP sent successfully");
 
   } catch (err) {
-    showAlert(err.message, "error");
+    showAlert("Server unreachable. Try again later.", "error");
   }
 }
 
@@ -179,7 +180,7 @@ async function verifyOTP(){
     window.location.href = "/user/index.html";
 
   } catch (err) {
-    showAlert(err.message, "error");
+    showAlert(err.message || "Verification failed", "error");
   }
 }
 </script>
