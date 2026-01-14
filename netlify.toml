@@ -1,25 +1,95 @@
 [build]
   publish = "."
 
-# Root → User login page
+# ---------- ROOT ----------
 [[redirects]]
   from = "/"
+  to = "/login"
+  status = 200
+  force = true
+
+# ---------- USER CLEAN ROUTES ----------
+[[redirects]]
+  from = "/login"
   to = "/user/login.html"
   status = 200
   force = true
 
-# ---------- USER ROUTES ----------
-# Allow direct access & refresh for all user pages
 [[redirects]]
-  from = "/user/*"
-  to = "/user/:splat"
+  from = "/home"
+  to = "/user/index.html"
   status = 200
   force = true
 
-# ---------- ADMIN ROUTES ----------
-# Allow direct access & refresh for all admin pages
 [[redirects]]
-  from = "/admin/*"
-  to = "/admin/:splat"
+  from = "/cart"
+  to = "/user/cart.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/checkout"
+  to = "/user/checkout.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/orders"
+  to = "/user/orders.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/product"
+  to = "/user/product.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/profile"
+  to = "/user/profile.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/success"
+  to = "/user/success.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/wishlist"
+  to = "/user/wishlist.html"
+  status = 200
+  force = true
+
+# ---------- ADMIN CLEAN ROUTES ----------
+[[redirects]]
+  from = "/admin"
+  to = "/admin/admin-login.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/dashboard"
+  to = "/admin/admin-dashboard.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/orders"
+  to = "/admin/admin-orders.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/products"
+  to = "/admin/admin-products.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/users"
+  to = "/admin/admin-users.html"
   status = 200
   force = true
