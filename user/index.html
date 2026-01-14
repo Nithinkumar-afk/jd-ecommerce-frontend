@@ -58,145 +58,95 @@ body{font-family:Poppins,sans-serif;background:black;color:white}
 <div id="toast" class="toast"></div>
 
 <script>
-/* CONFIG */
-const BASE_URL = "https://shopx-production-b1ad.up.railway.app";
-const API = BASE_URL + "/api/products";
-const IMAGE_BASE = BASE_URL + "/";
-const FALLBACK = "https://via.placeholder.com/300x200?text=No+Image";
+/* SPLASH */
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    const splash = document.getElementById("splash");
+    if (splash) splash.classList.add("hide");
+  }, 2000);
+});
 
-/* AUTH */
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
-const token = localStorage.getItem("token");
-if(!user || !token) location.href="login.html";
+/* ✅ PRODUCTION API */
+const API_BASE = "https://shopx-production-b1ad.up.railway.app";
 
-/* USER INFO */
-const name = user.name || "User";
-const email = user.email || "Account";
-
-document.getElementById("userName").textContent = name;
-document.getElementById("dropName").textContent = name;
-document.getElementById("dropEmail").textContent = email;
-document.getElementById("avatar").textContent = name.charAt(0).toUpperCase();
-
-/* STATE */
-let products = [];
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let wishlist = JSON.parse(localStorage.getItem("wishlist")) || [];
-let selectedCategory = "all";
-
-/* DOM */
-const categoriesDiv = document.getElementById("categories");
-const productsDiv = document.getElementById("products");
-const search = document.getElementById("search");
-const cartCount = document.getElementById("cartCount");
-const menu = document.getElementById("menu");
-const toast = document.getElementById("toast");
-const profileBtn = document.getElementById("profileBtn");
-
-cartCount.textContent = cart.length;
-
-/* UTIL */
-const normalize = v => (v||"").toString().trim().toLowerCase();
-function showToast(msg){
-  toast.textContent = msg;
-  toast.classList.add("show");
-  setTimeout(()=>toast.classList.remove("show"),2000);
+/* ✅ AUTO REDIRECT IF LOGGED IN */
+if (localStorage.getItem("token")) {
+  window.location.replace("index.html"); // user/index.html
 }
 
-/* MENU */
-profileBtn.onclick = e=>{
-  e.stopPropagation();
-  menu.style.display = menu.style.display==="block"?"none":"block";
-};
-menu.onclick = e=>e.stopPropagation();
-document.addEventListener("click",()=>menu.style.display="none");
+const alertMsg = document.getElementById("alertMsg");
+const otpBox = document.getElementById("otpBox");
 
-function logout(){
-  localStorage.clear();
-  location.href="login.html";
+function showAlert(msg, type = "success") {
+  alertMsg.textContent = msg;
+  alertMsg.className = `alert-msg alert-${type}`;
+  alertMsg.classList.remove("hidden");
 }
 
-/* FETCH PRODUCTS */
-fetch(API,{
-  headers:{ Authorization:"Bearer "+token }
-})
-.then(r=>r.json())
-.then(data=>{
-  products=(Array.isArray(data)?data:[]).map((p,idx)=>({
-    id:p.id ?? idx,
-    name:p.name || "Unnamed product",
-    price:p.price || 0,
-    category:normalize(p.category),
-    images:Array.isArray(p.images)
-      ? p.images.map(i=>i.startsWith("http")?i:IMAGE_BASE+i)
-      : []
-  }));
-  renderCategories();
-  renderProducts();
-})
-.catch(()=>showToast("Failed to load products"));
-
-/* CATEGORIES */
-function renderCategories(){
-  const cats=["all",...new Set(products.map(p=>p.category).filter(Boolean))];
-  categoriesDiv.innerHTML="";
-  cats.forEach(c=>{
-    const b=document.createElement("button");
-    b.textContent=c==="all"?"All":c;
-    if(c===selectedCategory) b.classList.add("active");
-    b.onclick=()=>{
-      selectedCategory=c;
-      renderCategories();
-      renderProducts();
-    };
-    categoriesDiv.appendChild(b);
-  });
+function validEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* PRODUCTS */
-function renderProducts(){
-  const q=normalize(search.value);
-  productsDiv.innerHTML="";
-  products.forEach(p=>{
-    if(selectedCategory!=="all" && p.category!==selectedCategory) return;
-    if(!normalize(p.name).includes(q)) return;
+/* SEND OTP */
+async function sendOTP() {
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
 
-    const img=p.images[0]||FALLBACK;
-    const inWish=wishlist.some(w=>w.id===p.id);
+  if (!name || !email)
+    return showAlert("Enter name & email", "error");
 
-    productsDiv.insertAdjacentHTML("beforeend",`
-      <div class="product" onclick="location.href='product.html?id=${p.id}'">
-        <button class="wishlist-btn ${inWish?'active':''}" onclick="event.stopPropagation();toggleWish(${p.id})">❤️</button>
-        <img src="${img}" onerror="this.src='${FALLBACK}'">
-        <h3>${p.name}</h3>
-        <div class="price">₹${p.price}</div>
-        <button class="cart-btn" onclick="event.stopPropagation();addToCart(${p.id})">Add to Cart</button>
-      </div>
-    `);
-  });
+  if (!validEmail(email))
+    return showAlert("Invalid email address", "error");
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok)
+      throw new Error(data.message || "OTP send failed");
+
+    otpBox.classList.remove("hidden");
+    showAlert("OTP sent successfully");
+
+  } catch (err) {
+    showAlert(err.message, "error");
+  }
 }
 
-/* CART & WISHLIST */
-function addToCart(id){
-  if(cart.some(i=>i.id===id)) return showToast("Already in cart");
-  const p=products.find(p=>p.id===id);
-  if(!p) return;
-  cart.push({...p,qty:1});
-  localStorage.setItem("cart",JSON.stringify(cart));
-  cartCount.textContent=cart.length;
-  showToast("Added to cart 🛒");
-}
+/* VERIFY OTP */
+async function verifyOTP() {
+  const email = document.getElementById("email").value.trim();
+  const otp = document.getElementById("otp").value.trim();
 
-function toggleWish(id){
-  const i=wishlist.findIndex(w=>w.id===id);
-  const p=products.find(p=>p.id===id);
-  if(!p) return;
-  i===-1 ? wishlist.push(p) : wishlist.splice(i,1);
-  localStorage.setItem("wishlist",JSON.stringify(wishlist));
-  renderProducts();
-}
+  if (!otp)
+    return showAlert("Enter OTP", "error");
 
-search.oninput=renderProducts;
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok)
+      throw new Error(data.message || "OTP invalid");
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+
+    window.location.replace("index.html"); // user/index.html
+
+  } catch (err) {
+    showAlert(err.message, "error");
+  }
+}
 </script>
 
 </body>
