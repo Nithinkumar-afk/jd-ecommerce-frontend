@@ -1,20 +1,25 @@
 [build]
   publish = "."
 
-# Root → User login
+# Root → User login page
 [[redirects]]
   from = "/"
   to = "/user/login.html"
   status = 200
+  force = true
 
-# User pages (prevent 404 on refresh)
+# ---------- USER ROUTES ----------
+# Allow direct access & refresh for all user pages
 [[redirects]]
   from = "/user/*"
   to = "/user/:splat"
   status = 200
+  force = true
 
-# Admin pages (prevent 404 on refresh)
+# ---------- ADMIN ROUTES ----------
+# Allow direct access & refresh for all admin pages
 [[redirects]]
   from = "/admin/*"
   to = "/admin/:splat"
   status = 200
+  force = true
