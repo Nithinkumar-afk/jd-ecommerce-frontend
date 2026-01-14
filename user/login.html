@@ -91,7 +91,8 @@ body{
     <input id="name" placeholder="Full Name">
     <input id="email" type="email" placeholder="Email Address">
 
-    <button onclick="sendOTP()">Send OTP</button>
+    <button id="sendOtpBtn" onclick="sendOTP()">Send OTP</button>
+
 
     <div id="otpBox" class="hidden">
       <input id="otp" type="number" placeholder="Enter OTP">
@@ -117,11 +118,12 @@ const API_BASE = "https://shopx-production-b1ad.up.railway.app";
 
 /* ✅ AUTO REDIRECT IF LOGGED IN */
 if (localStorage.getItem("token")) {
-  window.location.replace("index.html"); // user/index.html
+  window.location.replace("index.html");
 }
 
 const alertMsg = document.getElementById("alertMsg");
 const otpBox = document.getElementById("otpBox");
+const sendBtn = document.getElementById("sendOtpBtn");
 
 function showAlert(msg, type = "success") {
   alertMsg.textContent = msg;
@@ -145,6 +147,9 @@ async function sendOTP() {
     return showAlert("Invalid email address", "error");
 
   try {
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Sending OTP...";
+
     const res = await fetch(`${API_BASE}/api/auth/send-otp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,7 +165,10 @@ async function sendOTP() {
     showAlert("OTP sent successfully");
 
   } catch (err) {
-    showAlert(err.message, "error");
+    showAlert(err.message || "Server not reachable", "error");
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = "Send OTP";
   }
 }
 
@@ -187,13 +195,14 @@ async function verifyOTP() {
     localStorage.setItem("token", data.token);
     localStorage.setItem("loggedInUser", JSON.stringify(data.user));
 
-    window.location.replace("index.html"); // user/index.html
+    window.location.replace("index.html");
 
   } catch (err) {
     showAlert(err.message, "error");
   }
 }
 </script>
+
 
 </body>
 </html>
