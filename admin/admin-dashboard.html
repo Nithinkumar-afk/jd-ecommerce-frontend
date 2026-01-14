@@ -122,9 +122,9 @@ header button:hover{background:#dc2626}
 "use strict";
 
 /* ======================
-   CONFIG
+   ✅ PRODUCTION CONFIG
 ====================== */
-const API = "http://localhost:5000";
+const API_BASE = "https://shopx-production-b1ad.up.railway.app";
 
 /* ======================
    AUTH GUARD
@@ -135,9 +135,12 @@ if (!token) location.replace("admin-login.html");
 /* ======================
    AUTH FETCH
 ====================== */
-async function authFetch(url) {
-  const res = await fetch(url, {
-    headers: { Authorization: "Bearer " + token }
+async function authFetch(endpoint) {
+  const res = await fetch(API_BASE + endpoint, {
+    headers: {
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json"
+    }
   });
 
   if (res.status === 401 || res.status === 403) {
@@ -169,15 +172,13 @@ function timeAgo(dateString) {
 ====================== */
 (async () => {
   try {
-    /* DASHBOARD STATS */
-    const stats = await authFetch(`${API}/api/admin/stats`);
+    const stats = await authFetch("/api/admin/stats");
     totalProducts.innerText = stats.products;
     totalOrders.innerText = stats.orders;
     totalUsers.innerText = stats.users;
     totalRevenue.innerText = "₹" + stats.revenue;
 
-    /* ✅ RECENT ORDERS (REQUEST YOU ASKED TO ADD) */
-    const orders = await authFetch("http://localhost:5000/api/admin/recent-orders");
+    const orders = await authFetch("/api/admin/recent-orders");
     const recentOrders = document.getElementById("recentOrders");
 
     if (!orders || orders.length === 0) {
@@ -187,13 +188,9 @@ function timeAgo(dateString) {
 
     recentOrders.innerHTML = orders.map(o => `
       <div class="order">
-        <strong>${o.name ?? "Guest"}</strong> (${o.phone ?? "—"})
+        <strong>${o.name ?? "Guest"}</strong>
         <small>
-          ₹${o.total} • ${timeAgo(o.created_at)} • 
-          ${new Date(o.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })}
+          ₹${o.total} • ${timeAgo(o.created_at)}
         </small>
       </div>
     `).join("");

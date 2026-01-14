@@ -115,14 +115,13 @@ textarea{grid-column:1/-1}
 <div class="products" id="list"></div>
 
 <script>
-/* ================= CONFIG ================= */
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "https://shopx-production-b1ad.up.railway.app/api";
 const PRODUCTS_API = API_BASE + "/products";
 const token = localStorage.getItem("adminToken");
 
 if (!token) location.href = "admin-login.html";
 
-/* ================= ELEMENTS ================= */
+/* ELEMENTS */
 const list = document.getElementById("list");
 const addBtn = document.getElementById("addBtn");
 
@@ -134,13 +133,12 @@ const img2Input = document.getElementById("img2");
 const img3Input = document.getElementById("img3");
 const descInput = document.getElementById("desc");
 
-/* ================= LOAD PRODUCTS ================= */
+/* LOAD PRODUCTS */
 async function loadProducts() {
   const res = await fetch(PRODUCTS_API);
   const products = await res.json();
 
   list.innerHTML = "";
-
   products.forEach(p => {
     const imgs = Array.isArray(p.images) ? p.images : [];
     list.innerHTML += `
@@ -155,7 +153,7 @@ async function loadProducts() {
   });
 }
 
-/* ================= ADD PRODUCT ================= */
+/* ADD PRODUCT */
 addBtn.onclick = async () => {
   const payload = {
     name: nameInput.value.trim(),
@@ -170,8 +168,6 @@ addBtn.onclick = async () => {
     return;
   }
 
-  console.log("➡️ ADD PRODUCT:", payload);
-
   const res = await fetch(PRODUCTS_API, {
     method: "POST",
     headers: {
@@ -182,43 +178,32 @@ addBtn.onclick = async () => {
   });
 
   const data = await res.json();
-  console.log("⬅️ RESPONSE:", res.status, data);
-
-  if (!res.ok) {
-    alert(data.message || "Add failed");
-    return;
-  }
+  if (!res.ok) return alert(data.message || "Add failed");
 
   alert("✅ Product added");
   clearForm();
   loadProducts();
 };
 
-/* ================= DELETE ================= */
+/* DELETE */
 async function deleteProduct(id) {
   if (!confirm("Delete product?")) return;
-
-  const res = await fetch(`${PRODUCTS_API}/${id}`, {
+  await fetch(`${PRODUCTS_API}/${id}`, {
     method: "DELETE",
     headers: { Authorization: "Bearer " + token }
   });
-
-  if (res.ok) loadProducts();
+  loadProducts();
 }
 
-/* ================= HELPERS ================= */
+/* HELPERS */
 function clearForm() {
   [nameInput, priceInput, categoryInput, img1Input, img2Input, img3Input, descInput]
     .forEach(i => i.value = "");
 }
 
-function goBack() {
-  location.href = "admin-dashboard.html";
-}
-
-/* ================= INIT ================= */
 loadProducts();
 </script>
+
 
 </body>
 </html>
