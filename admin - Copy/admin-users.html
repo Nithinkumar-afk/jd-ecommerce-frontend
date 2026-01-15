@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Users | JD</title>
+
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
+:root{
+  --glass:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.12);
+  --text:#e5e7eb;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Poppins,sans-serif;
+  background:#000;
+  color:var(--text);
+}
+
+header{
+  padding:20px 28px;
+  display:flex;
+  justify-content:space-between;
+  border-bottom:1px solid var(--border);
+}
+
+header button{
+  background:#ef4444;
+  border:none;
+  padding:10px 22px;
+  border-radius:999px;
+  color:#fff;
+  cursor:pointer;
+}
+
+.nav{
+  display:flex;
+  gap:14px;
+  padding:18px 26px;
+}
+
+.nav a{
+  text-decoration:none;
+  padding:12px 20px;
+  border-radius:999px;
+  background:var(--glass);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+.section{ padding:26px }
+
+.user-card{
+  background:var(--glass);
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:18px;
+  margin-bottom:18px;
+  display:flex;
+  gap:18px;
+}
+
+.user-image{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid var(--border);
+}
+
+.actions{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+}
+
+.edit-btn{
+  background:#3b82f6;
+  border:none;
+  padding:8px 18px;
+  color:white;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.delete-btn{
+  background:#ef4444;
+  border:none;
+  padding:8px 18px;
+  color:white;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  justify-content:center;
+  align-items:center;
+}
+
+.modal-content{
+  background:#020617;
+  padding:26px;
+  border-radius:22px;
+  width:90%;
+  max-width:440px;
+}
+
+.modal-content input,
+.modal-content textarea{
+  width:100%;
+  margin-bottom:12px;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:var(--glass);
+  color:var(--text);
+}
+
+.preview{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  margin-bottom:12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>JD • Admin Users</h2>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<nav class="nav">
+  <a href="admin-dashboard.html">Dashboard</a>
+  <a href="admin-products.html">Products</a>
+  <a href="admin-orders.html">Orders</a>
+  <a href="admin-users.html">Users</a>
+</nav>
+
+<section class="section">
+  <h3>All Users</h3>
+  <div id="usersList">Loading users...</div>
+</section>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <h3>Edit User</h3>
+    <img id="imagePreview" class="preview">
+    <input id="editName" placeholder="Full Name">
+    <input id="editPhone" readonly>
+    <input id="editAltPhone" readonly>
+    <input type="file" id="editImage">
+    <textarea id="editAddresses" placeholder="One address per line"></textarea>
+    <button class="edit-btn" onclick="saveEdit()">Save</button>
+    <button class="delete-btn" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const API_BASE = "https://shopx-production-b1ad.up.railway.app";
+const API = API_BASE + "/api/admin/users";
+const token = localStorage.getItem("adminToken");
+
+if(!token) location.replace("admin-login.html");
+
+const DEFAULT_IMAGE = "https://i.imgur.com/8Km9tLL.png";
+
+const usersList = document.getElementById("usersList");
+const editModal = document.getElementById("editModal");
+const editName = document.getElementById("editName");
+const editPhone = document.getElementById("editPhone");
+const editAltPhone = document.getElementById("editAltPhone");
+const editAddresses = document.getElementById("editAddresses");
+const editImage = document.getElementById("editImage");
+const imagePreview = document.getElementById("imagePreview");
+
+let users = [];
+let editUserId = null;
+
+/* =========================
+   LOAD USERS
+========================= */
+async function loadUsers(){
+  try{
+    const res = await fetch(API,{
+      headers:{ Authorization:"Bearer "+token }
+    });
+
+    if(res.status === 401 || res.status === 403) return logout();
+
+    const data = await res.json();
+
+    if(!Array.isArray(data)){
+      usersList.innerHTML = "No users";
+      return;
+    }
+
+    users = data.map(u=>{
+      const image =
+        u.image
+          ? API_BASE + u.image
+          : DEFAULT_IMAGE;
+
+      return { ...u, image };
+    });
+
+    renderUsers();
+  }catch(err){
+    console.error(err);
+    usersList.innerHTML="Server error";
+  }
+}
+
+/* =========================
+   RENDER USERS
+========================= */
+function renderUsers(){
+  usersList.innerHTML = "";
+
+  if(!users.length){
+    usersList.innerHTML = "No users found";
+    return;
+  }
+
+  users.forEach(u=>{
+    usersList.innerHTML += `
+      <div class="user-card">
+        <img class="user-image" src="${u.image}" onerror="this.src='${DEFAULT_IMAGE}'">
+        <div style="flex:1">
+          <p><strong>${u.name || "No Name"}</strong></p>
+          <div class="actions">
+            <button class="edit-btn" onclick="openEdit(${u.id})">Edit</button>
+            <button class="delete-btn" onclick="deleteUser(${u.id})">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+
+/* =========================
+   OPEN EDIT MODAL
+========================= */
+function openEdit(id){
+  const u = users.find(x => x.id == id);
+  if(!u) return;
+
+  editUserId = id;
+  editName.value = u.name || "";
+  editPhone.value = u.phone || "";
+  editAltPhone.value = u.altPhone || "";
+
+  editAddresses.value = Array.isArray(u.addresses)
+    ? u.addresses.map(a => a.address).join("\n")
+    : "";
+
+  imagePreview.src = u.image;
+  editImage.value = "";
+  editModal.style.display = "flex";
+}
+
+/* =========================
+   IMAGE PREVIEW FIX
+========================= */
+editImage.addEventListener("change", () => {
+  const file = editImage.files[0];
+  if(file){
+    imagePreview.src = URL.createObjectURL(file);
+  }
+});
+
+/* =========================
+   CLOSE MODAL
+========================= */
+function closeModal(){
+  editModal.style.display = "none";
+}
+
+/* =========================
+   SAVE USER
+========================= */
+async function saveEdit(){
+  const name = editName.value.trim();
+  if(!name){
+    alert("Name is required");
+    return;
+  }
+
+  const addrList = editAddresses.value
+    .split("\n")
+    .map(a => a.trim())
+    .filter(Boolean);
+
+  const fd = new FormData();
+  fd.append("name", name);
+  fd.append("addresses", JSON.stringify(addrList));
+
+  try{
+    const res = await fetch(API + "/" + editUserId,{
+      method:"PUT",
+      headers:{ Authorization:"Bearer " + token },
+      body: fd
+    });
+
+    if(!res.ok) throw new Error("Update failed");
+
+    if(editImage.files[0]){
+      const imgFd = new FormData();
+      imgFd.append("image", editImage.files[0]);
+
+      const imgRes = await fetch(API + "/" + editUserId + "/image",{
+        method:"PUT",
+        headers:{ Authorization:"Bearer " + token },
+        body: imgFd
+      });
+
+      if(!imgRes.ok) throw new Error("Image upload failed");
+    }
+
+    closeModal();
+    loadUsers();
+  }catch(err){
+    alert(err.message);
+    console.error(err);
+  }
+}
+
+/* =========================
+   DELETE USER
+========================= */
+async function deleteUser(id){
+  if(!confirm("Delete user permanently?")) return;
+
+  try{
+    const res = await fetch(API + "/" + id,{
+      method:"DELETE",
+      headers:{ Authorization:"Bearer " + token }
+    });
+
+    if(!res.ok) throw new Error("Delete failed");
+    loadUsers();
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+/* =========================
+   LOGOUT
+========================= */
+function logout(){
+  localStorage.removeItem("adminToken");
+  location.replace("admin-login.html");
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>
