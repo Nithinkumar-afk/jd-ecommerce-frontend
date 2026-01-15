@@ -5,9 +5,9 @@
 <title>Admin – Products | JD</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
+<style>
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -15,7 +15,6 @@ body{
   background:radial-gradient(circle at top,#0b0b0b,#000);
   color:#e5e7eb;
 }
-
 header{
   padding:18px 22px;
   display:flex;
@@ -35,7 +34,6 @@ header button{
   font-weight:600;
   cursor:pointer;
 }
-
 .form{
   margin:18px;
   padding:18px;
@@ -63,7 +61,6 @@ textarea{grid-column:1/-1}
   font-weight:600;
   cursor:pointer;
 }
-
 .products{
   padding:18px;
   display:grid;
@@ -74,16 +71,19 @@ textarea{grid-column:1/-1}
   background:rgba(255,255,255,.06);
   border-radius:22px;
   padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 .card img{
   width:100%;
   height:150px;
   object-fit:cover;
   border-radius:16px;
+  background:#111;
 }
 .card button{
-  margin-top:10px;
-  width:100%;
+  margin-top:auto;
   padding:10px;
   border:none;
   border-radius:14px;
@@ -105,26 +105,29 @@ textarea{grid-column:1/-1}
   <input id="name" placeholder="Product name">
   <input id="price" type="number" placeholder="Price">
   <input id="category" placeholder="Category">
-  <input id="img1" placeholder="Image URL 1 (optional)">
-  <input id="img2" placeholder="Image URL 2 (optional)">
-  <input id="img3" placeholder="Image URL 3 (optional)">
-  <textarea id="desc" rows="3" placeholder="Description (optional)"></textarea>
+  <input id="img1" placeholder="Image URL (required)">
+  <input id="img2" placeholder="Image URL (optional)">
+  <input id="img3" placeholder="Image URL (optional)">
+  <textarea id="desc" rows="3" placeholder="Description"></textarea>
   <button id="addBtn">Add Product</button>
 </div>
 
 <div class="products" id="list"></div>
 
 <script>
+/* ================= CONFIG ================= */
 const API_BASE = "https://shopx-production-b1ad.up.railway.app/api";
 const PUBLIC_PRODUCTS_API = API_BASE + "/products";
 const ADMIN_PRODUCTS_API = API_BASE + "/admin/products";
 
-const token = localStorage.getItem("adminToken");
-if (!token) location.href = "admin-login.html";
-
 const FALLBACK_IMAGE =
   "https://via.placeholder.com/600x400?text=No+Image";
 
+/* ================= AUTH ================= */
+const token = localStorage.getItem("adminToken");
+if (!token) location.href = "admin-login.html";
+
+/* ================= ELEMENTS ================= */
 const list = document.getElementById("list");
 const addBtn = document.getElementById("addBtn");
 
@@ -136,47 +139,58 @@ const img2Input = document.getElementById("img2");
 const img3Input = document.getElementById("img3");
 const descInput = document.getElementById("desc");
 
-/* LOAD PRODUCTS */
-async function loadProducts() {
+/* ================= LOAD PRODUCTS ================= */
+async function loadProducts(){
+  list.innerHTML = "";
+
   const res = await fetch(PUBLIC_PRODUCTS_API);
   const products = await res.json();
 
-  list.innerHTML = "";
+  if (!Array.isArray(products)) return;
 
-  products.forEach(p => {
-    const imgs = Array.isArray(p.images) && p.images.length
-      ? p.images
-      : [FALLBACK_IMAGE];
+  products.forEach(p=>{
+    const productId = p.id || p._id; // 🔥 FIX
+    const imgSrc = p.images?.[0] || FALLBACK_IMAGE;
 
     const card = document.createElement("div");
     card.className = "card";
+
     card.innerHTML = `
-      <img src="${imgs[0]}" onerror="this.src='${FALLBACK_IMAGE}'">
-      <h4>${p.name}</h4>
-      <p>₹${p.price}</p>
+      <img src="${imgSrc}" onerror="this.src='${FALLBACK_IMAGE}'">
+      <strong>${p.name}</strong>
+      <span>₹${p.price}</span>
       <small>${p.category}</small>
       <button>Delete</button>
     `;
 
-    card.querySelector("button").onclick = () => deleteProduct(p.id);
+    card.querySelector("button").onclick = () => deleteProduct(productId);
     list.appendChild(card);
   });
 }
 
-/* ADD PRODUCT */
+/* ================= ADD PRODUCT ================= */
 addBtn.onclick = async () => {
+  const images = [
+    img1Input.value.trim(),
+    img2Input.value.trim(),
+    img3Input.value.trim()
+  ].filter(Boolean);
+
+  if (!images.length) {
+    alert("At least ONE image URL is required");
+    return;
+  }
+
   const payload = {
     name: nameInput.value.trim(),
     price: Number(priceInput.value),
     category: categoryInput.value.trim(),
     description: descInput.value.trim(),
-    image1: img1Input.value.trim(),
-    image2: img2Input.value.trim(),
-    image3: img3Input.value.trim()
+    images
   };
 
   if (!payload.name || !payload.category || isNaN(payload.price)) {
-    alert("Name, price and category are required");
+    alert("Name, price & category are required");
     return;
   }
 
@@ -196,8 +210,9 @@ addBtn.onclick = async () => {
   loadProducts();
 };
 
-/* DELETE PRODUCT */
-async function deleteProduct(id) {
+/* ================= DELETE ================= */
+async function deleteProduct(id){
+  if (!id) return alert("Invalid product ID");
   if (!confirm("Delete product?")) return;
 
   const res = await fetch(`${ADMIN_PRODUCTS_API}/${id}`, {
@@ -205,17 +220,13 @@ async function deleteProduct(id) {
     headers: { Authorization: "Bearer " + token }
   });
 
-  if (!res.ok) {
-    alert("Delete failed");
-    return;
-  }
-
+  if (!res.ok) alert("Delete failed");
   loadProducts();
 }
 
-/* HELPERS */
-function clearForm() {
-  [nameInput, priceInput, categoryInput, img1Input, img2Input, img3Input, descInput]
+/* ================= CLEAR ================= */
+function clearForm(){
+  [nameInput,priceInput,categoryInput,img1Input,img2Input,img3Input,descInput]
     .forEach(i => i.value = "");
 }
 
