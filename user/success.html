@@ -14,71 +14,54 @@ body{
   font-family:Poppins,sans-serif;
   background:radial-gradient(circle at top,#0f172a,#020617);
   color:#f8fafc;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 
-/* ================= CONTAINER ================= */
 .container{
+  width:100%;
   max-width:720px;
-  margin:60px auto;
+  margin:40px 18px;
   background:rgba(255,255,255,.07);
   backdrop-filter:blur(20px);
   border-radius:26px;
   padding:28px;
   border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 40px 80px rgba(0,0,0,.85);
+  box-shadow:0 25px 60px rgba(0,0,0,.45)
 }
 
-/* ================= SUCCESS ================= */
-.success{
-  text-align:center;
-  margin-bottom:24px;
-}
+.success{text-align:center;margin-bottom:26px}
+.success h1{color:#22c55e;margin-bottom:8px;font-size:24px}
 
-.success h1{
-  color:#22c55e;
-  margin-bottom:8px;
-  font-size:24px;
-}
+.order-id{margin-top:10px;color:#94a3b8;font-size:14px}
 
-.order-id{
-  margin-top:10px;
-  color:#94a3b8;
-  font-size:14px;
-}
+#orderItems{margin-top:16px}
 
-/* ================= ITEMS ================= */
 .item{
   background:rgba(255,255,255,.08);
   padding:16px;
   border-radius:18px;
   margin-top:14px;
   border:1px solid rgba(255,255,255,.12);
+  display:flex;
+  justify-content:space-between;
+  gap:12px
 }
 
-.item b{
-  font-size:15px;
-  color:#f8fafc;
-}
-
-.item div{
-  font-size:14px;
-  color:#cbd5f5;
-}
-
-/* ================= TOTAL ================= */
 .total{
   text-align:right;
   font-size:18px;
   font-weight:600;
   margin-top:26px;
-  color:#22c55e;
+  color:#22c55e
 }
 
-/* ================= ACTIONS ================= */
 .actions{
   margin-top:34px;
   display:flex;
-  gap:16px;
+  gap:16px
 }
 
 .actions a{
@@ -88,37 +71,22 @@ body{
   border-radius:16px;
   text-decoration:none;
   font-weight:600;
-  transition:.25s;
 }
 
-/* BUTTONS */
 .home{
   background:linear-gradient(135deg,#38bdf8,#2563eb);
-  color:#fff;
-  box-shadow:0 18px 40px rgba(56,189,248,.4);
-}
-.home:hover{
-  transform:translateY(-2px);
-  box-shadow:0 26px 60px rgba(56,189,248,.55);
+  color:#fff
 }
 
 .orders{
   background:rgba(255,255,255,.12);
   color:#f8fafc;
-  border:1px solid rgba(255,255,255,.2);
-}
-.orders:hover{
-  background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.2)
 }
 
-/* ================= MOBILE ================= */
 @media(max-width:600px){
-  .container{
-    margin:30px 14px;
-  }
-  .actions{
-    flex-direction:column;
-  }
+  .item{flex-direction:column}
+  .actions{flex-direction:column}
 }
 </style>
 </head>
@@ -136,53 +104,43 @@ body{
   <div id="orderItems"></div>
 
   <div class="total">
-    Total Paid: <span id="orderTotal"></span>
+    Total Paid: ₹<span id="orderTotal"></span>
   </div>
 
   <div class="actions">
     <a href="../index.html" class="home">Continue Shopping</a>
-    <a href="./orders.html" class="orders">View Orders</a>
+    <a href="orders.html" class="orders">View Orders</a>
   </div>
 </div>
 
 <script>
-const API = "https://shopx-production-b1ad.up.railway.app/api";
-const token = localStorage.getItem("token");
+/* ===============================
+   CONFIG
+================================ */
+const BASE = "https://shopx-production-406f.up.railway.app";
 
-if (!token) location.href = "./login.html";
+/* ===============================
+   LOAD LAST ORDER
+================================ */
+const lastOrder = JSON.parse(localStorage.getItem("last_order"));
 
-const money = n => "₹" + Number(n || 0).toLocaleString("en-IN");
+if(!lastOrder){
+  alert("No order found");
+  location.href = "../index.html";
+}
 
-fetch(`${API}/orders/latest`, {
-  headers: {
-    Authorization: "Bearer " + token
-  }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Failed to load order");
-  return res.json();
-})
-.then(order => {
-  document.getElementById("orderId").textContent = order.id;
-  document.getElementById("orderTotal").textContent = money(order.total_amount);
+document.getElementById("orderId").textContent = lastOrder.id;
+document.getElementById("orderTotal").textContent = lastOrder.total.toFixed(2);
 
-  const itemsEl = document.getElementById("orderItems");
-  itemsEl.innerHTML = "";
+const itemsBox = document.getElementById("orderItems");
 
-  (order.items || []).forEach(item => {
-    itemsEl.innerHTML += `
-      <div class="item">
-        <div>
-          <b>${item.name}</b><br>
-          ${money(item.price)} × ${item.quantity}
-        </div>
-      </div>
-    `;
-  });
-})
-.catch(err => {
-  console.error(err);
-  alert("Unable to load order details");
+lastOrder.items.forEach(item=>{
+  itemsBox.innerHTML += `
+    <div class="item">
+      <div>${item.name} × ${item.qty}</div>
+      <div>₹${(item.price * item.qty).toFixed(2)}</div>
+    </div>
+  `;
 });
 </script>
 
