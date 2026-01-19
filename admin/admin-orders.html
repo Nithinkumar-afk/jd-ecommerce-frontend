@@ -147,20 +147,23 @@ let currentFilter = "ALL";
 
 /* ================= FETCH ORDERS ================= */
 async function loadOrders() {
+  const ordersDiv = document.getElementById("orders");
+
   try {
     const res = await fetch(ADMIN_API, {
-      headers: {
-        "x-api-key": ADMIN_KEY
-      }
+      headers: { "x-api-key": ADMIN_KEY }
     });
 
     if (!res.ok) throw new Error("Unauthorized");
 
-    allOrders = await res.json();
+    const data = await res.json();
+    allOrders = Array.isArray(data) ? data : [];
+
     renderOrders();
 
   } catch (err) {
-    document.getElementById("orders").innerHTML =
+    console.error(err);
+    ordersDiv.innerHTML =
       "<p style='color:#ef4444'>Failed to load orders</p>";
   }
 }
@@ -168,8 +171,10 @@ async function loadOrders() {
 /* ================= FILTER ================= */
 function setFilter(status, btn) {
   currentFilter = status;
+
   document.querySelectorAll(".filters button")
     .forEach(b => b.classList.remove("active"));
+
   btn.classList.add("active");
   renderOrders();
 }
@@ -179,9 +184,10 @@ function renderOrders() {
   const div = document.getElementById("orders");
   div.innerHTML = "";
 
-  const list = currentFilter === "ALL"
-    ? allOrders
-    : allOrders.filter(o => o.status === currentFilter);
+  const list =
+    currentFilter === "ALL"
+      ? allOrders
+      : allOrders.filter(o => o.status === currentFilter);
 
   if (!list.length) {
     div.innerHTML = "<p>No orders found</p>";
@@ -192,65 +198,33 @@ function renderOrders() {
     const box = document.createElement("div");
     box.className = "order";
 
+    const itemsHtml = Array.isArray(o.items)
+      ? o.items.map(i =>
+          `${i.name} × ${i.quantity} (₹${i.price})`
+        ).join("<br>")
+      : "No items";
+
     box.innerHTML = `
       <b>Order #${o.id}</b><br>
       Customer: ${o.customer_name || "Guest"}<br>
-      <b>Total: ₹${Number(o.total_amount).toLocaleString("en-IN")}</b>
+      <b>Total: ₹${Number(o.total_amount || 0)
+        .toLocaleString("en-IN")}</b>
 
-      <div class="status ${o.status}">Status: ${o.status}</div>
-
-      <div class="items">
-        ${o.items.map(i =>
-          `${i.name} × ${i.quantity} (₹${i.price})`
-        ).join("<br>")}
+      <div class="status ${o.status}">
+        Status: ${o.status}
       </div>
 
+      <div class="items">${itemsHtml}</div>
+
       <div class="actions">
-        ${o.status === "PLACED" ? `
-          <button class="ship" onclick="updateStatus(${o.id},'SHIPPED')">Ship</button>
-          <button class="cancel" onclick="updateStatus(${o.id},'CANCELLED')">Cancel</button>
-        ` : ""}
-
-        ${o.status === "SHIPPED" ? `
-          <button class="deliver" onclick="updateStatus(${o.id},'DELIVERED')">Deliver</button>
-        ` : ""}
-
-        <button class="delete" onclick="deleteOrder(${o.id})">Delete</button>
+        <small style="color:#9ca3af">
+          Status change & delete coming soon
+        </small>
       </div>
     `;
 
     div.appendChild(box);
   });
-}
-
-/* ================= UPDATE STATUS ================= */
-async function updateStatus(id, status) {
-  if (!confirm(`Mark order as ${status}?`)) return;
-
-  await fetch(`${ADMIN_API}/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ADMIN_KEY
-    },
-    body: JSON.stringify({ status })
-  });
-
-  loadOrders();
-}
-
-/* ================= DELETE ================= */
-async function deleteOrder(id) {
-  if (!confirm("Delete this order permanently?")) return;
-
-  await fetch(`${ADMIN_API}/${id}`, {
-    method: "DELETE",
-    headers: {
-      "x-api-key": ADMIN_KEY
-    }
-  });
-
-  loadOrders();
 }
 
 /* ================= INIT ================= */

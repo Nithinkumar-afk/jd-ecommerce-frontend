@@ -191,7 +191,6 @@ header a{
 const BASE = "https://shopx-production-406f.up.railway.app";
 const ADMIN_KEY = "JD_ADMIN_2026";
 
-
 /* ================= HELPERS ================= */
 const formatMoney = n =>
   "₹" + Number(n || 0).toLocaleString("en-IN");
@@ -216,13 +215,13 @@ async function loadDashboard() {
     const users = await usersRes.json();
 
     document.getElementById("totalProducts").textContent =
-      Number(stats.products || 0);
+      Number(stats?.products || 0);
 
     document.getElementById("totalOrders").textContent =
-      Number(stats.orders || 0);
+      Number(stats?.orders || 0);
 
     document.getElementById("totalRevenue").textContent =
-      formatMoney(stats.revenue);
+      formatMoney(stats?.revenue);
 
     document.getElementById("totalUsers").textContent =
       Array.isArray(users) ? users.length : 0;
@@ -238,8 +237,10 @@ async function loadDashboard() {
   }
 }
 
+/* ================= INIT ================= */
 loadDashboard();
 </script>
+
 
 </body>
 </html>

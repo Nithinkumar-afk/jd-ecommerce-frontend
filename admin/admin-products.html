@@ -170,8 +170,8 @@ const FALLBACK =
   "https://via.placeholder.com/400x250?text=No+Image";
 
 /* ================= ELEMENTS ================= */
-const list = document.getElementById("list");
-const nameEl = document.getElementById("name");
+const list    = document.getElementById("list");
+const nameEl  = document.getElementById("name");
 const priceEl = document.getElementById("price");
 const imageEl = document.getElementById("image");
 const descEl  = document.getElementById("desc");
@@ -180,30 +180,36 @@ const descEl  = document.getElementById("desc");
 async function loadProducts() {
   try {
     const res = await fetch(API);
+    if (!res.ok) throw new Error("Fetch failed");
+
     const data = await res.json();
 
     list.innerHTML = "";
 
-    if (!data.length) {
+    if (!Array.isArray(data) || data.length === 0) {
       list.innerHTML = "<p>No products found</p>";
       return;
     }
 
     data.forEach(p => {
-      const img = p.image ? BASE + p.image : FALLBACK;
+      const img =
+        p.image && p.image.startsWith("/")
+          ? BASE + p.image
+          : FALLBACK;
 
       list.innerHTML += `
         <div class="card">
           <img src="${img}" onerror="this.src='${FALLBACK}'">
           <small>ID: ${p.id}</small>
           <strong>${p.name}</strong>
-          <p>₹${Number(p.price).toFixed(2)}</p>
+          <p>₹${Number(p.price || 0).toFixed(2)}</p>
           <button onclick="deleteProduct(${p.id})">Delete</button>
         </div>
       `;
     });
 
-  } catch {
+  } catch (err) {
+    console.error(err);
     list.innerHTML =
       "<p style='color:red'>Failed to load products</p>";
   }
@@ -211,16 +217,18 @@ async function loadProducts() {
 
 /* ================= ADD PRODUCT ================= */
 async function addProduct() {
-  if (!nameEl.value || !priceEl.value) {
+  if (!nameEl.value.trim() || !priceEl.value.trim()) {
     alert("Name and price required");
     return;
   }
 
   const form = new FormData();
-  form.append("name", nameEl.value);
+  form.append("name", nameEl.value.trim());
   form.append("price", priceEl.value);
   form.append("description", descEl.value || "");
-  if (imageEl.files[0]) form.append("image", imageEl.files[0]);
+  if (imageEl.files[0]) {
+    form.append("image", imageEl.files[0]);
+  }
 
   try {
     const res = await fetch(API, {
@@ -231,17 +239,18 @@ async function addProduct() {
       body: form
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Add failed");
 
     nameEl.value = "";
     priceEl.value = "";
     descEl.value = "";
     imageEl.value = "";
 
-    loadProducts();
+    await loadProducts();
     alert("Product added ✅");
 
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert("Failed to add product");
   }
 }
@@ -258,11 +267,12 @@ async function deleteProduct(id) {
       }
     });
 
-    if (!res.ok) throw new Error();
+    if (!res.ok) throw new Error("Delete failed");
 
-    loadProducts();
+    await loadProducts();
 
-  } catch {
+  } catch (err) {
+    console.error(err);
     alert("Failed to delete product");
   }
 }
