@@ -230,49 +230,83 @@ textarea{
 <div class="products" id="list">Loading products...</div>
 
 <script>
-const BASE = "https://shopx-production-406f.up.railway.app";
-const API = BASE + "/api/products";
-const FALLBACK = "https://via.placeholder.com/400x250?text=No+Image";
+"use strict";
 
+/* ================= ADMIN CONFIG ================= */
+const BASE_URL = "https://shopx-production-406f.up.railway.app";
+
+const PUBLIC_PRODUCTS_API = BASE_URL + "/api/products";
+const ADMIN_PRODUCTS_API  = BASE_URL + "/api/admin/products";
+
+const FALLBACK =
+  "https://via.placeholder.com/400x250?text=No+Image";
+
+/* ================= ADMIN AUTH ================= */
+let adminKey = localStorage.getItem("adminKey");
+
+if (!adminKey) {
+  adminKey = prompt("Enter Admin Key");
+  if (!adminKey) location.href = "../index.html";
+  localStorage.setItem("adminKey", adminKey);
+}
+
+/* ================= ADMIN FETCH ================= */
+function adminFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      "x-admin-key": adminKey,
+      ...(options.headers || {})
+    }
+  });
+}
+
+/* ================= ELEMENTS ================= */
 const list = document.getElementById("list");
 const nameEl = document.getElementById("name");
 const priceEl = document.getElementById("price");
 const imageEl = document.getElementById("image");
 const descEl = document.getElementById("desc");
 
-/* LOAD PRODUCTS */
-function loadProducts(){
-  fetch(API)
-    .then(r => r.json())
-    .then(data => {
-      list.innerHTML = "";
+/* ================= LOAD PRODUCTS ================= */
+async function loadProducts() {
+  try {
+    const res = await fetch(PUBLIC_PRODUCTS_API);
+    const data = await res.json();
 
-      if(!data.length){
-        list.innerHTML = "<p>No products found</p>";
-        return;
-      }
+    list.innerHTML = "";
 
-      data.forEach(p => {
-        const imgSrc = p.image ? BASE + p.image : FALLBACK;
-        list.innerHTML += `
-          <div class="card">
-            <img src="${imgSrc}" onerror="this.src='${FALLBACK}'">
-            <small>ID: ${p.id}</small>
-            <strong>${p.name}</strong>
-            <p>₹${Number(p.price).toFixed(2)}</p>
-            <button onclick="deleteProduct(${p.id})">Delete</button>
-          </div>
-        `;
-      });
-    })
-    .catch(() => {
-      list.innerHTML = "<p style='color:red'>Failed to load products</p>";
+    if (!data.length) {
+      list.innerHTML = "<p>No products found</p>";
+      return;
+    }
+
+    data.forEach(p => {
+      const imgSrc = p.image ? BASE_URL + p.image : FALLBACK;
+
+      list.innerHTML += `
+        <div class="card">
+          <img src="${imgSrc}" onerror="this.src='${FALLBACK}'">
+          <small>ID: ${p.id}</small>
+          <strong>${p.name}</strong>
+          <p>₹${Number(p.price).toFixed(2)}</p>
+          <button onclick="deleteProduct(${p.id})">
+            Delete
+          </button>
+        </div>
+      `;
     });
+
+  } catch (err) {
+    console.error(err);
+    list.innerHTML =
+      "<p style='color:red'>Failed to load products</p>";
+  }
 }
 
-/* ADD PRODUCT */
-function addProduct(){
-  if(!nameEl.value || !priceEl.value){
+/* ================= ADD PRODUCT ================= */
+async function addProduct() {
+  if (!nameEl.value || !priceEl.value) {
     alert("Name and price required");
     return;
   }
@@ -280,27 +314,49 @@ function addProduct(){
   const form = new FormData();
   form.append("name", nameEl.value);
   form.append("price", priceEl.value);
-  form.append("description", descEl.value);
-  if(imageEl.files[0]) form.append("image", imageEl.files[0]);
+  form.append("description", descEl.value || "");
+  if (imageEl.files[0]) form.append("image", imageEl.files[0]);
 
-  fetch(API,{
-    method:"POST",
-    body:form
-  }).then(() => {
+  try {
+    const res = await adminFetch(ADMIN_PRODUCTS_API, {
+      method: "POST",
+      body: form
+    });
+
+    if (!res.ok) throw new Error("Add failed");
+
     nameEl.value = "";
     priceEl.value = "";
     descEl.value = "";
     imageEl.value = "";
+
     loadProducts();
-  });
+    alert("Product added ✅");
+
+  } catch (err) {
+    alert("Failed to add product");
+  }
 }
 
-/* DELETE */
-function deleteProduct(id){
-  if(!confirm("Delete this product?")) return;
-  fetch(`${API}/${id}`,{ method:"DELETE" }).then(loadProducts);
+/* ================= DELETE PRODUCT ================= */
+async function deleteProduct(id) {
+  if (!confirm("Delete this product?")) return;
+
+  try {
+    const res = await adminFetch(`${ADMIN_PRODUCTS_API}/${id}`, {
+      method: "DELETE"
+    });
+
+    if (!res.ok) throw new Error("Delete failed");
+
+    loadProducts();
+
+  } catch {
+    alert("Failed to delete product");
+  }
 }
 
+/* ================= INIT ================= */
 loadProducts();
 </script>
 

@@ -190,28 +190,54 @@ button:disabled {
 <div class="container" id="orders">Loading...</div>
 
 <script>
-const BASE = "https://shopx-production-406f.up.railway.app";
-const API = BASE + "/api/admin/orders";
+"use strict";
+
+/* ================= ADMIN CONFIG ================= */
+const BASE_URL = "https://shopx-production-406f.up.railway.app";
+const ADMIN_API = BASE_URL + "/api/admin/orders";
+const ADMIN_KEY = localStorage.getItem("adminKey");
+
+/* ================= PROTECT ADMIN ================= */
+if (!ADMIN_KEY) {
+  const key = prompt("Enter Admin Key");
+  if (!key) location.href = "../index.html";
+  localStorage.setItem("adminKey", key);
+}
+
+/* ================= ADMIN FETCH ================= */
+function adminFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "x-admin-key": localStorage.getItem("adminKey"),
+      ...(options.headers || {})
+    }
+  });
+}
+
+/* ================= STATE ================= */
 let allOrders = [];
 let currentFilter = "ALL";
 
-/* =========================
-   LOAD ORDERS
-========================= */
+/* ================= LOAD ORDERS ================= */
 async function loadOrders() {
   try {
-    const res = await fetch(API + "/orders");
+    const res = await adminFetch(ADMIN_API);
+
+    if (!res.ok) throw new Error("Unauthorized");
+
     allOrders = await res.json();
     renderOrders();
-  } catch {
+
+  } catch (err) {
+    console.error(err);
     document.getElementById("orders").innerHTML =
       "<p style='color:#ef4444'>Failed to load orders</p>";
   }
 }
 
-/* =========================
-   FILTER
-========================= */
+/* ================= FILTER ================= */
 function setFilter(status, btn) {
   currentFilter = status;
   document.querySelectorAll(".filters button")
@@ -220,9 +246,7 @@ function setFilter(status, btn) {
   renderOrders();
 }
 
-/* =========================
-   RENDER
-========================= */
+/* ================= RENDER ================= */
 function renderOrders() {
   const div = document.getElementById("orders");
   div.innerHTML = "";
@@ -247,7 +271,7 @@ function renderOrders() {
 
     box.innerHTML = `
       <b>Order #${o.id}</b><br>
-      Customer: ${o.customer_name}<br>
+      Customer: ${o.customer_name || "Guest"}<br>
       <b>Total: ₹${total.toLocaleString("en-IN")}</b>
 
       <div class="status ${o.status}">Status: ${o.status}</div>
@@ -261,15 +285,19 @@ function renderOrders() {
 
       <div class="actions">
         ${o.status === "PLACED" ? `
-          <button class="ship" onclick="updateStatus(this,${o.id},'SHIPPED')">Ship</button>
-          <button class="cancel" onclick="updateStatus(this,${o.id},'CANCELLED')">Cancel</button>
+          <button class="ship"
+            onclick="updateStatus(${o.id},'SHIPPED')">Ship</button>
+          <button class="cancel"
+            onclick="updateStatus(${o.id},'CANCELLED')">Cancel</button>
         ` : ""}
 
         ${o.status === "SHIPPED" ? `
-          <button class="deliver" onclick="updateStatus(this,${o.id},'DELIVERED')">Deliver</button>
+          <button class="deliver"
+            onclick="updateStatus(${o.id},'DELIVERED')">Deliver</button>
         ` : ""}
 
-        <button class="delete" onclick="deleteOrder(${o.id})">Delete</button>
+        <button class="delete"
+          onclick="deleteOrder(${o.id})">Delete</button>
       </div>
     `;
 
@@ -277,28 +305,30 @@ function renderOrders() {
   });
 }
 
-/* =========================
-   UPDATE STATUS
-========================= */
-async function updateStatus(btn, id, status) {
-  btn.disabled = true;
-  await fetch(`${API}/admin/orders/${id}`, {
+/* ================= UPDATE STATUS ================= */
+async function updateStatus(id, status) {
+  if (!confirm(`Mark order as ${status}?`)) return;
+
+  await adminFetch(`${ADMIN_API}/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status })
   });
+
   loadOrders();
 }
 
-/* =========================
-   DELETE ORDER
-========================= */
+/* ================= DELETE ORDER ================= */
 async function deleteOrder(id) {
   if (!confirm("Delete this order permanently?")) return;
-  await fetch(`${API}/admin/orders/${id}`, { method: "DELETE" });
+
+  await adminFetch(`${ADMIN_API}/${id}`, {
+    method: "DELETE"
+  });
+
   loadOrders();
 }
 
+/* ================= INIT ================= */
 loadOrders();
 </script>
 

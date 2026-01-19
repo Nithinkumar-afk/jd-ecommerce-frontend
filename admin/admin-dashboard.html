@@ -219,46 +219,76 @@ header a{
 </div>
 
 <script>
-const BASE = "https://shopx-production-406f.up.railway.app";
-const API = BASE + "/api/admin/stats";
+"use strict";
 
+/* ================= ADMIN CONFIG ================= */
+const BASE_URL = "https://shopx-production-406f.up.railway.app";
+const ADMIN_KEY = localStorage.getItem("adminKey");
 
+/* ================= PROTECT ADMIN ================= */
+if (!ADMIN_KEY) {
+  const key = prompt("Enter Admin Key");
+  if (!key) {
+    location.href = "../index.html";
+  }
+  localStorage.setItem("adminKey", key);
+}
+
+/* ================= ADMIN FETCH ================= */
+function adminFetch(url) {
+  return fetch(url, {
+    headers: {
+      "x-admin-key": localStorage.getItem("adminKey")
+    }
+  });
+}
+
+/* ================= HELPERS ================= */
 const formatMoney = n =>
   "₹" + Number(n || 0).toLocaleString("en-IN");
 
-async function loadDashboard(){
-  try{
+/* ================= LOAD DASHBOARD ================= */
+async function loadDashboard() {
+  try {
     const [statsRes, usersRes] = await Promise.all([
-      fetch(BASE + "/api/admin/stats"),
-      fetch(BASE + "/api/admin/users")
+      adminFetch(`${BASE_URL}/api/admin/stats`),
+      adminFetch(`${BASE_URL}/api/admin/users`)
     ]);
+
+    if (!statsRes.ok || !usersRes.ok) {
+      throw new Error("Admin access denied");
+    }
 
     const stats = await statsRes.json();
     const users = await usersRes.json();
 
-    document.getElementById("totalProducts").innerText =
+    document.getElementById("totalProducts").textContent =
       Number(stats.products || 0);
 
-    document.getElementById("totalOrders").innerText =
+    document.getElementById("totalOrders").textContent =
       Number(stats.orders || 0);
 
-    document.getElementById("totalRevenue").innerText =
+    document.getElementById("totalRevenue").textContent =
       formatMoney(stats.revenue);
 
-    document.getElementById("totalUsers").innerText =
+    document.getElementById("totalUsers").textContent =
       Array.isArray(users) ? users.length : 0;
 
-  }catch(err){
+  } catch (err) {
     console.error(err);
-    document.getElementById("totalProducts").innerText = "0";
-    document.getElementById("totalOrders").innerText = "0";
-    document.getElementById("totalRevenue").innerText = "₹0";
-    document.getElementById("totalUsers").innerText = "0";
+
+    document.getElementById("totalProducts").textContent = "0";
+    document.getElementById("totalOrders").textContent = "0";
+    document.getElementById("totalRevenue").textContent = "₹0";
+    document.getElementById("totalUsers").textContent = "0";
+
+    alert("Failed to load admin dashboard");
   }
 }
 
 loadDashboard();
 </script>
+
 
 </body>
 </html>

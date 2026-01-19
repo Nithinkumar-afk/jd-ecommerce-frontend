@@ -267,28 +267,31 @@ button:hover{
 </div>
 
 <script>
+"use strict";
+
+/* ================= BACKEND ================= */
 const BASE = "https://shopx-production-406f.up.railway.app";
-
-const USER_API = BASE + "/api/user";
 const PROFILE_API = BASE + "/api/profile";
+const USER_INIT_API = BASE + "/api/user/init";
 
-/* USER SESSION */
+/* ================= USER SESSION ================= */
 let userId = localStorage.getItem("userId");
 
-async function initUser(){
-  if(!userId){
-    const res = await fetch(API + "/api/user/init",{method:"POST"});
+async function initUser() {
+  if (!userId) {
+    const res = await fetch(USER_INIT_API, { method: "POST" });
     const data = await res.json();
-    localStorage.setItem("userId",data.userId);
+    localStorage.setItem("userId", data.userId);
     userId = data.userId;
   }
 }
 
-/* ELEMENTS */
+/* ================= ELEMENTS ================= */
 const nameI = document.getElementById("name");
 const phoneI = document.getElementById("phone");
 const altPhoneI = document.getElementById("altPhone");
 const addressI = document.getElementById("address");
+
 const avatar = document.getElementById("avatar");
 const img = document.getElementById("profileImage");
 const fileInput = document.getElementById("fileInput");
@@ -297,13 +300,13 @@ const saveBtn = document.getElementById("saveBtn");
 
 let selectedFile = null;
 
-/* IMAGE */
-picBox.onclick = ()=>fileInput.click();
+/* ================= IMAGE PICK ================= */
+picBox.onclick = () => fileInput.click();
 
-fileInput.onchange = ()=>{
+fileInput.onchange = () => {
   selectedFile = fileInput.files[0];
   const reader = new FileReader();
-  reader.onload = ()=>{
+  reader.onload = () => {
     img.src = reader.result;
     img.hidden = false;
     avatar.hidden = true;
@@ -311,11 +314,12 @@ fileInput.onchange = ()=>{
   reader.readAsDataURL(selectedFile);
 };
 
-/* LOAD PROFILE */
-async function loadProfile(){
-  const res = await fetch(API + "/api/profile",{
-    headers:{ "x-user-id": userId }
+/* ================= LOAD PROFILE ================= */
+async function loadProfile() {
+  const res = await fetch(PROFILE_API, {
+    headers: { "x-user-id": userId }
   });
+
   const d = await res.json();
 
   nameI.value = d.name || "";
@@ -323,51 +327,53 @@ async function loadProfile(){
   altPhoneI.value = d.alt_phone || "";
   addressI.value = d.address_line || "";
 
-  if(d.image){
-    img.src = API + d.image;
+  if (d.image) {
+    img.src = BASE + d.image;
     img.hidden = false;
     avatar.hidden = true;
-  }else{
+  } else {
     avatar.hidden = false;
     img.hidden = true;
   }
 }
 
-/* SAVE PROFILE */
-saveBtn.onclick = async ()=>{
+/* ================= SAVE PROFILE ================= */
+saveBtn.onclick = async () => {
   const form = new FormData();
-  form.append("name",nameI.value);
-  form.append("phone",phoneI.value);
-  form.append("altPhone",altPhoneI.value);
-  if(selectedFile) form.append("image",selectedFile);
+  form.append("name", nameI.value);
+  form.append("phone", phoneI.value);
+  form.append("altPhone", altPhoneI.value);
+  if (selectedFile) form.append("image", selectedFile);
 
-  await fetch(API + "/api/profile",{
-    method:"POST",
-    headers:{ "x-user-id": userId },
-    body:form
+  await fetch(PROFILE_API, {
+    method: "POST",
+    headers: { "x-user-id": userId },
+    body: form
   });
 
-  await fetch(API + "/api/profile/address",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
+  await fetch(PROFILE_API + "/address", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
       "x-user-id": userId
     },
-    body:JSON.stringify({ address_line: addressI.value })
+    body: JSON.stringify({
+      address_line: addressI.value
+    })
   });
 
   alert("Profile saved ✅");
   loadProfile();
 };
 
-/* LOGOUT */
-function logout(){
-  localStorage.removeItem("userId");
-  window.location.href="../index.html";
+/* ================= LOGOUT ================= */
+function logout() {
+  localStorage.clear();
+  location.href = "../index.html";
 }
 
-/* INIT */
-(async ()=>{
+/* ================= INIT ================= */
+(async () => {
   await initUser();
   await loadProfile();
 })();
