@@ -28,7 +28,7 @@ body{
   color:var(--text);
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   padding:16px 22px;
   display:flex;
@@ -58,10 +58,9 @@ header button{
   color:#fff;
   font-weight:600;
   cursor:pointer;
-  white-space:nowrap;
 }
 
-/* ================= FORM ================= */
+/* FORM */
 .form{
   margin:20px auto;
   padding:20px;
@@ -82,9 +81,7 @@ input,textarea{
   font-family:Poppins;
 }
 
-textarea{
-  resize:vertical;
-}
+textarea{resize:vertical}
 
 .form button{
   padding:14px;
@@ -96,7 +93,7 @@ textarea{
   cursor:pointer;
 }
 
-/* ================= PRODUCTS GRID ================= */
+/* PRODUCTS */
 .products{
   padding:20px;
   display:grid;
@@ -106,13 +103,11 @@ textarea{
   margin:auto;
 }
 
-/* ================= PRODUCT CARD ================= */
 .card{
   background:var(--card);
   border-radius:18px;
   padding:14px;
   border:1px solid var(--border);
-  min-height:320px;
   display:flex;
   flex-direction:column;
 }
@@ -125,19 +120,9 @@ textarea{
   background:#111;
 }
 
-.card small{
-  color:var(--muted);
-  margin-top:8px;
-}
-
-.card strong{
-  margin-top:6px;
-  font-weight:600;
-}
-
-.card p{
-  margin:6px 0 10px;
-}
+.card small{color:var(--muted);margin-top:8px}
+.card strong{margin-top:6px}
+.card p{margin:6px 0 10px}
 
 .card button{
   margin-top:auto;
@@ -147,62 +132,6 @@ textarea{
   padding:10px;
   border-radius:12px;
   cursor:pointer;
-}
-
-/* ================= MOBILE ================= */
-@media (max-width:600px){
-  header{
-    flex-direction:column;
-    align-items:flex-start;
-  }
-
-  header h2{
-    font-size:16px;
-  }
-
-  header div{
-    width:100%;
-  }
-
-  header button{
-    flex:1;
-  }
-
-  .form{
-    margin:14px;
-    padding:16px;
-  }
-
-  .products{
-    padding:14px;
-    gap:14px;
-  }
-
-  .card img{
-    height:140px;
-  }
-
-  .card{
-    min-height:auto;
-  }
-}
-
-/* ================= TABLET ================= */
-@media (min-width:601px) and (max-width:1024px){
-  header h2{
-    font-size:17px;
-  }
-
-  .form{
-    margin:20px;
-  }
-}
-
-/* ================= LARGE SCREENS ================= */
-@media (min-width:1400px){
-  .products{
-    max-width:1500px;
-  }
 }
 </style>
 </head>
@@ -232,46 +161,25 @@ textarea{
 <script>
 "use strict";
 
-/* ================= ADMIN CONFIG ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-
-const PUBLIC_PRODUCTS_API = BASE_URL + "/api/products";
-const ADMIN_PRODUCTS_API  = BASE_URL + "/api/admin/products";
+/* ================= CONFIG ================= */
+const BASE = "https://shopx-production-406f.up.railway.app";
+const API  = BASE + "/api/products";
+const ADMIN_KEY = "JD_ADMIN_2026";
 
 const FALLBACK =
   "https://via.placeholder.com/400x250?text=No+Image";
-
-/* ================= ADMIN AUTH ================= */
-let adminKey = localStorage.getItem("adminKey");
-
-if (!adminKey) {
-  adminKey = prompt("Enter Admin Key");
-  if (!adminKey) location.href = "../index.html";
-  localStorage.setItem("adminKey", adminKey);
-}
-
-/* ================= ADMIN FETCH ================= */
-function adminFetch(url, options = {}) {
-  return fetch(url, {
-    ...options,
-    headers: {
-      "x-admin-key": adminKey,
-      ...(options.headers || {})
-    }
-  });
-}
 
 /* ================= ELEMENTS ================= */
 const list = document.getElementById("list");
 const nameEl = document.getElementById("name");
 const priceEl = document.getElementById("price");
 const imageEl = document.getElementById("image");
-const descEl = document.getElementById("desc");
+const descEl  = document.getElementById("desc");
 
 /* ================= LOAD PRODUCTS ================= */
 async function loadProducts() {
   try {
-    const res = await fetch(PUBLIC_PRODUCTS_API);
+    const res = await fetch(API);
     const data = await res.json();
 
     list.innerHTML = "";
@@ -282,23 +190,20 @@ async function loadProducts() {
     }
 
     data.forEach(p => {
-      const imgSrc = p.image ? BASE_URL + p.image : FALLBACK;
+      const img = p.image ? BASE + p.image : FALLBACK;
 
       list.innerHTML += `
         <div class="card">
-          <img src="${imgSrc}" onerror="this.src='${FALLBACK}'">
+          <img src="${img}" onerror="this.src='${FALLBACK}'">
           <small>ID: ${p.id}</small>
           <strong>${p.name}</strong>
           <p>₹${Number(p.price).toFixed(2)}</p>
-          <button onclick="deleteProduct(${p.id})">
-            Delete
-          </button>
+          <button onclick="deleteProduct(${p.id})">Delete</button>
         </div>
       `;
     });
 
-  } catch (err) {
-    console.error(err);
+  } catch {
     list.innerHTML =
       "<p style='color:red'>Failed to load products</p>";
   }
@@ -318,12 +223,15 @@ async function addProduct() {
   if (imageEl.files[0]) form.append("image", imageEl.files[0]);
 
   try {
-    const res = await adminFetch(ADMIN_PRODUCTS_API, {
+    const res = await fetch(API, {
       method: "POST",
+      headers: {
+        "x-api-key": ADMIN_KEY
+      },
       body: form
     });
 
-    if (!res.ok) throw new Error("Add failed");
+    if (!res.ok) throw new Error();
 
     nameEl.value = "";
     priceEl.value = "";
@@ -333,7 +241,7 @@ async function addProduct() {
     loadProducts();
     alert("Product added ✅");
 
-  } catch (err) {
+  } catch {
     alert("Failed to add product");
   }
 }
@@ -343,11 +251,14 @@ async function deleteProduct(id) {
   if (!confirm("Delete this product?")) return;
 
   try {
-    const res = await adminFetch(`${ADMIN_PRODUCTS_API}/${id}`, {
-      method: "DELETE"
+    const res = await fetch(`${API}/${id}`, {
+      method: "DELETE",
+      headers: {
+        "x-api-key": ADMIN_KEY
+      }
     });
 
-    if (!res.ok) throw new Error("Delete failed");
+    if (!res.ok) throw new Error();
 
     loadProducts();
 

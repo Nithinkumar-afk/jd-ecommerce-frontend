@@ -17,9 +17,7 @@
   --accent:orange;
 }
 
-* {
-  box-sizing:border-box;
-}
+* { box-sizing:border-box }
 
 body {
   background:var(--bg);
@@ -28,7 +26,7 @@ body {
   margin:0;
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header {
   padding:18px 20px;
   font-size:24px;
@@ -36,7 +34,7 @@ header {
   border-bottom:1px solid var(--border);
 }
 
-/* ================= FILTERS ================= */
+/* FILTERS */
 .filters {
   display:flex;
   gap:10px;
@@ -52,7 +50,6 @@ header {
   color:var(--text);
   cursor:pointer;
   font-size:14px;
-  white-space:nowrap;
 }
 
 .filters button.active {
@@ -60,14 +57,14 @@ header {
   color:#000;
 }
 
-/* ================= CONTAINER ================= */
+/* CONTAINER */
 .container {
   padding:20px;
   max-width:1200px;
   margin:auto;
 }
 
-/* ================= ORDER CARD ================= */
+/* ORDER CARD */
 .order {
   background:var(--card);
   padding:16px;
@@ -76,11 +73,6 @@ header {
   border:1px solid var(--border);
 }
 
-.order b {
-  font-weight:600;
-}
-
-/* ================= STATUS ================= */
 .status {
   font-weight:600;
   margin-top:6px;
@@ -91,7 +83,6 @@ header {
 .DELIVERED { color:#22c55e }
 .CANCELLED { color:#ef4444 }
 
-/* ================= ITEMS ================= */
 .items {
   margin-top:10px;
   font-size:14px;
@@ -99,7 +90,7 @@ header {
   line-height:1.6;
 }
 
-/* ================= ACTIONS ================= */
+/* ACTIONS */
 .actions {
   display:flex;
   flex-wrap:wrap;
@@ -120,57 +111,10 @@ header {
 .cancel { background:#ef4444; color:#000 }
 .delete { background:#6b7280; color:#000 }
 
-button:disabled {
-  opacity:.5;
-  cursor:not-allowed;
-}
-
-/* ================= MOBILE ================= */
-@media (max-width: 600px) {
-  header {
-    font-size:20px;
-    text-align:center;
-  }
-
-  .filters {
-    overflow-x:auto;
-    flex-wrap:nowrap;
-    padding-bottom:10px;
-  }
-
-  .filters::-webkit-scrollbar {
-    display:none;
-  }
-
-  .container {
-    padding:14px;
-  }
-
-  .order {
-    padding:14px;
-  }
-
-  .actions button {
-    width:100%;
-  }
-}
-
-/* ================= TABLET ================= */
-@media (min-width: 601px) and (max-width: 1024px) {
-  header {
-    font-size:22px;
-  }
-
-  .actions button {
-    flex:1;
-  }
-}
-
-/* ================= LARGE SCREENS ================= */
-@media (min-width: 1400px) {
-  .container {
-    max-width:1400px;
-  }
+@media (max-width:600px) {
+  header { font-size:20px; text-align:center }
+  .filters { overflow-x:auto; flex-wrap:nowrap }
+  .actions button { width:100% }
 }
 </style>
 </head>
@@ -192,38 +136,23 @@ button:disabled {
 <script>
 "use strict";
 
-/* ================= ADMIN CONFIG ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-const ADMIN_API = BASE_URL + "/api/admin/orders";
-const ADMIN_KEY = localStorage.getItem("adminKey");
-
-/* ================= PROTECT ADMIN ================= */
-if (!ADMIN_KEY) {
-  const key = prompt("Enter Admin Key");
-  if (!key) location.href = "../index.html";
-  localStorage.setItem("adminKey", key);
-}
-
-/* ================= ADMIN FETCH ================= */
-function adminFetch(url, options = {}) {
-  return fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-key": localStorage.getItem("adminKey"),
-      ...(options.headers || {})
-    }
-  });
-}
+/* ================= CONFIG ================= */
+const BASE = "https://shopx-production-406f.up.railway.app";
+const ADMIN_API = BASE + "/api/admin/orders";
+const ADMIN_KEY = "JD_ADMIN_2026";
 
 /* ================= STATE ================= */
 let allOrders = [];
 let currentFilter = "ALL";
 
-/* ================= LOAD ORDERS ================= */
+/* ================= FETCH ORDERS ================= */
 async function loadOrders() {
   try {
-    const res = await adminFetch(ADMIN_API);
+    const res = await fetch(ADMIN_API, {
+      headers: {
+        "x-api-key": ADMIN_KEY
+      }
+    });
 
     if (!res.ok) throw new Error("Unauthorized");
 
@@ -231,7 +160,6 @@ async function loadOrders() {
     renderOrders();
 
   } catch (err) {
-    console.error(err);
     document.getElementById("orders").innerHTML =
       "<p style='color:#ef4444'>Failed to load orders</p>";
   }
@@ -261,21 +189,15 @@ function renderOrders() {
   }
 
   list.forEach(o => {
-    const total = Number(o.total_amount || 0);
-    const deliveredDate = o.delivered_at
-      ? new Date(o.delivered_at).toLocaleDateString("en-IN")
-      : "";
-
     const box = document.createElement("div");
     box.className = "order";
 
     box.innerHTML = `
       <b>Order #${o.id}</b><br>
       Customer: ${o.customer_name || "Guest"}<br>
-      <b>Total: ₹${total.toLocaleString("en-IN")}</b>
+      <b>Total: ₹${Number(o.total_amount).toLocaleString("en-IN")}</b>
 
       <div class="status ${o.status}">Status: ${o.status}</div>
-      ${deliveredDate ? `<div>Delivered on: ${deliveredDate}</div>` : ""}
 
       <div class="items">
         ${o.items.map(i =>
@@ -285,19 +207,15 @@ function renderOrders() {
 
       <div class="actions">
         ${o.status === "PLACED" ? `
-          <button class="ship"
-            onclick="updateStatus(${o.id},'SHIPPED')">Ship</button>
-          <button class="cancel"
-            onclick="updateStatus(${o.id},'CANCELLED')">Cancel</button>
+          <button class="ship" onclick="updateStatus(${o.id},'SHIPPED')">Ship</button>
+          <button class="cancel" onclick="updateStatus(${o.id},'CANCELLED')">Cancel</button>
         ` : ""}
 
         ${o.status === "SHIPPED" ? `
-          <button class="deliver"
-            onclick="updateStatus(${o.id},'DELIVERED')">Deliver</button>
+          <button class="deliver" onclick="updateStatus(${o.id},'DELIVERED')">Deliver</button>
         ` : ""}
 
-        <button class="delete"
-          onclick="deleteOrder(${o.id})">Delete</button>
+        <button class="delete" onclick="deleteOrder(${o.id})">Delete</button>
       </div>
     `;
 
@@ -309,20 +227,27 @@ function renderOrders() {
 async function updateStatus(id, status) {
   if (!confirm(`Mark order as ${status}?`)) return;
 
-  await adminFetch(`${ADMIN_API}/${id}`, {
+  await fetch(`${ADMIN_API}/${id}`, {
     method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ADMIN_KEY
+    },
     body: JSON.stringify({ status })
   });
 
   loadOrders();
 }
 
-/* ================= DELETE ORDER ================= */
+/* ================= DELETE ================= */
 async function deleteOrder(id) {
   if (!confirm("Delete this order permanently?")) return;
 
-  await adminFetch(`${ADMIN_API}/${id}`, {
-    method: "DELETE"
+  await fetch(`${ADMIN_API}/${id}`, {
+    method: "DELETE",
+    headers: {
+      "x-api-key": ADMIN_KEY
+    }
   });
 
   loadOrders();

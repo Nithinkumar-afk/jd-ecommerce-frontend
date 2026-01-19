@@ -123,53 +123,22 @@ header a{
   background:rgba(77,163,255,.12);
 }
 
-/* =====================================================
-   RESPONSIVE — SAME SYSTEM AS STORE UI
-===================================================== */
-
-/* Tablet */
+/* ================= RESPONSIVE ================= */
 @media (max-width:768px){
-  header{
-    padding:14px 16px;
-  }
-
-  .container{
-    padding:22px 16px;
-  }
-
-  header h2{
-    font-size:18px;
-  }
+  header{padding:14px 16px}
+  .container{padding:22px 16px}
+  header h2{font-size:18px}
 }
 
-/* Mobile */
 @media (max-width:480px){
-  header{
-    flex-direction:column;
-    align-items:flex-start;
-    gap:10px;
-  }
-
-  .logo{
-    width:38px;
-    height:38px;
-    border-radius:12px;
-  }
-
-  header h2{
-    font-size:17px;
-  }
-
-  .card p{
-    font-size:24px;
-  }
+  header{flex-direction:column;align-items:flex-start;gap:10px}
+  .logo{width:38px;height:38px;border-radius:12px}
+  header h2{font-size:17px}
+  .card p{font-size:24px}
 }
 
-/* Large screens */
 @media (min-width:1200px){
-  .container{
-    max-width:1280px;
-  }
+  .container{max-width:1280px}
 }
 </style>
 </head>
@@ -181,7 +150,6 @@ header a{
     <div class="logo">JD</div>
     <h2>Admin Dashboard</h2>
   </div>
-
   <a href="../index.html">Go to Store →</a>
 </header>
 
@@ -219,29 +187,10 @@ header a{
 </div>
 
 <script>
-"use strict";
+/* ================= CONFIG ================= */
+const BASE = "https://shopx-production-406f.up.railway.app";
+const ADMIN_KEY = "JD_ADMIN_2026";
 
-/* ================= ADMIN CONFIG ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-const ADMIN_KEY = localStorage.getItem("adminKey");
-
-/* ================= PROTECT ADMIN ================= */
-if (!ADMIN_KEY) {
-  const key = prompt("Enter Admin Key");
-  if (!key) {
-    location.href = "../index.html";
-  }
-  localStorage.setItem("adminKey", key);
-}
-
-/* ================= ADMIN FETCH ================= */
-function adminFetch(url) {
-  return fetch(url, {
-    headers: {
-      "x-admin-key": localStorage.getItem("adminKey")
-    }
-  });
-}
 
 /* ================= HELPERS ================= */
 const formatMoney = n =>
@@ -251,12 +200,16 @@ const formatMoney = n =>
 async function loadDashboard() {
   try {
     const [statsRes, usersRes] = await Promise.all([
-      adminFetch(`${BASE_URL}/api/admin/stats`),
-      adminFetch(`${BASE_URL}/api/admin/users`)
+      fetch(BASE + "/api/admin/stats", {
+        headers: { "x-api-key": ADMIN_KEY }
+      }),
+      fetch(BASE + "/api/admin/users", {
+        headers: { "x-api-key": ADMIN_KEY }
+      })
     ]);
 
     if (!statsRes.ok || !usersRes.ok) {
-      throw new Error("Admin access denied");
+      throw new Error("Unauthorized");
     }
 
     const stats = await statsRes.json();
@@ -276,19 +229,17 @@ async function loadDashboard() {
 
   } catch (err) {
     console.error(err);
+    alert("Admin access denied or server error");
 
     document.getElementById("totalProducts").textContent = "0";
     document.getElementById("totalOrders").textContent = "0";
     document.getElementById("totalRevenue").textContent = "₹0";
     document.getElementById("totalUsers").textContent = "0";
-
-    alert("Failed to load admin dashboard");
   }
 }
 
 loadDashboard();
 </script>
-
 
 </body>
 </html>
