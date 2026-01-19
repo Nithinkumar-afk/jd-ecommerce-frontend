@@ -8,6 +8,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+/* ===== SPLASH SCREEN ===== */
+#splash{
+  position:fixed;
+  inset:0;
+  background:black;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#splash.hide{
+  opacity:0;
+  visibility:hidden;
+}
+#splash svg{perspective:1000px}
+.ring{
+  transform-origin:50% 50%;
+  transform-style:preserve-3d;
+  animation:saturnHorizontal 36s linear infinite;
+}
+@keyframes saturnHorizontal{
+  from{transform:rotateY(0deg) rotateZ(-16deg)}
+  to{transform:rotateY(360deg) rotateZ(-16deg)}
+}
+
 /* ===== SAME CSS (UNCHANGED) ===== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -180,11 +206,51 @@ header{
 
 <body>
 
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splash">
+<svg width="450" height="450" viewBox="0 0 600 520"
+     xmlns="http://www.w3.org/2000/svg">
+
+<defs>
+  <linearGradient id="jdGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#4fb6e8"/>
+    <stop offset="100%" stop-color="#0b2d55"/>
+  </linearGradient>
+  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#8ccfe8"/>
+    <stop offset="100%" stop-color="#244a7a"/>
+  </linearGradient>
+</defs>
+
+<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
+  fill="none" stroke="url(#ringGrad)" stroke-width="28" opacity="0.55"/>
+
+<path d="
+M180 90 V350
+C180 410 135 445 90 445
+C45 445 40 410 40 410
+V380 C40 380 75 395 100 380
+C120 368 120 345 120 325
+V90
+H305
+C445 90 520 180 520 260
+C520 340 445 430 305 430
+H180 Z
+M285 160 V360 H310
+C385 360 430 315 430 260
+C430 205 385 160 310 160 Z"
+fill="url(#jdGrad)" stroke="white" stroke-width="16" stroke-linejoin="round"/>
+
+<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
+  fill="none" stroke="white" stroke-width="10" opacity="0.9"/>
+</svg>
+</div>
+
+<!-- ===== YOUR STORE (UNCHANGED) ===== -->
 <header>
   <div class="logo"><span>J</span>D</div>
   <input id="search" placeholder="Search products">
   <div class="header-right">
-
     <div class="profile-wrapper">
       <div class="profile-btn" onclick="toggleProfileMenu()">
         <div class="avatar" id="avatar">G</div>
@@ -196,11 +262,9 @@ header{
         <button class="logout" onclick="logout()">🚪 Logout</button>
       </div>
     </div>
-
     <button class="cart" onclick="location.href='user/cart.html'">
       Cart (<span id="cartCount">0</span>)
     </button>
-
   </div>
 </header>
 
@@ -220,18 +284,22 @@ header{
 </div>
 
 <script>
-/* ================= BACKEND ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-const API_PRODUCTS = BASE_URL + "/api/products";
-const API_USER_INIT = BASE_URL + "/api/user/init";
+/* ===== SPLASH HIDE ===== */
+window.addEventListener("load",()=>{
+  setTimeout(()=>document.getElementById("splash").classList.add("hide"),2500);
+});
 
+/* ================= BACKEND ================= */
+const BASE_URL="https://shopx-production-406f.up.railway.app";
+const API_PRODUCTS=BASE_URL+"/api/products";
+const API_USER_INIT=BASE_URL+"/api/user/init";
 const FALLBACK="https://via.placeholder.com/300x200";
 
 /* ================= USER INIT ================= */
 if(!localStorage.getItem("userId")){
   fetch(API_USER_INIT,{method:"POST"})
-    .then(r=>r.json())
-    .then(d=>localStorage.setItem("userId",d.userId));
+  .then(r=>r.json())
+  .then(d=>localStorage.setItem("userId",d.userId));
 }
 
 /* ================= STATE ================= */
@@ -257,45 +325,31 @@ function showToast(msg){
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
-
 function toggleProfileMenu(){
   profileMenu.style.display=profileMenu.style.display==="flex"?"none":"flex";
 }
-
-function logout(){
-  localStorage.clear();
-  location.reload();
-}
+function logout(){localStorage.clear();location.reload()}
 
 /* ================= LOAD PRODUCTS ================= */
-fetch(API_PRODUCTS)
-.then(r=>r.json())
-.then(data=>{
-  productsData=data;
-  renderProducts();
+fetch(API_PRODUCTS).then(r=>r.json()).then(d=>{
+  productsData=d;renderProducts();
 });
-
 function renderProducts(){
   const q=search.value.toLowerCase();
   products.innerHTML="";
-  productsData
-    .filter(p=>p.name.toLowerCase().includes(q))
-    .forEach(p=>{
-      products.insertAdjacentHTML("beforeend",`
-        <div class="product">
-          <div class="img-box" onclick="openModal(${p.id})">
-            <img src="${p.image||FALLBACK}">
-          </div>
-          <h3>${p.name}</h3>
-          <p>₹${p.price}</p>
-          <button class="cart-btn" onclick="addToCart(${p.id})">
-            Add to Cart
-          </button>
-        </div>
-      `);
-    });
+  productsData.filter(p=>p.name.toLowerCase().includes(q))
+  .forEach(p=>{
+    products.insertAdjacentHTML("beforeend",`
+    <div class="product">
+      <div class="img-box" onclick="openModal(${p.id})">
+        <img src="${p.image||FALLBACK}">
+      </div>
+      <h3>${p.name}</h3>
+      <p>₹${p.price}</p>
+      <button class="cart-btn" onclick="addToCart(${p.id})">Add to Cart</button>
+    </div>`);
+  });
 }
-
 function addToCart(id){
   if(cart.some(i=>i.id===id))return showToast("Already in cart");
   const p=productsData.find(p=>p.id===id);
@@ -304,7 +358,6 @@ function addToCart(id){
   cartCount.textContent=cart.length;
   showToast("Added to cart 🛒");
 }
-
 function openModal(id){
   const p=productsData.find(p=>p.id===id);
   modal.style.display="flex";
@@ -312,9 +365,7 @@ function openModal(id){
   modalName.textContent=p.name;
   modalPrice.textContent="₹"+p.price;
 }
-
 function closeModal(){modal.style.display="none"}
-
 search.oninput=renderProducts;
 </script>
 
