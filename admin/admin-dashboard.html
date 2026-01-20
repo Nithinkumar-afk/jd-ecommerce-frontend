@@ -35,7 +35,6 @@ header{
   align-items:center;
   position:sticky;
   top:0;
-  z-index:50;
 }
 
 .header-left{
@@ -136,10 +135,6 @@ header a{
   header h2{font-size:17px}
   .card p{font-size:24px}
 }
-
-@media (min-width:1200px){
-  .container{max-width:1280px}
-}
 </style>
 </head>
 
@@ -158,22 +153,22 @@ header a{
   <div class="cards">
     <div class="card">
       <h3>Total Products</h3>
-      <p id="totalProducts">—</p>
+      <p id="totalProducts">0</p>
     </div>
 
     <div class="card">
       <h3>Total Orders</h3>
-      <p id="totalOrders">—</p>
+      <p id="totalOrders">0</p>
     </div>
 
     <div class="card">
-      <h3>Total Revenue (Delivered)</h3>
+      <h3>Total Revenue</h3>
       <p id="totalRevenue">₹0</p>
     </div>
 
     <div class="card">
       <h3>Total Users</h3>
-      <p id="totalUsers">—</p>
+      <p id="totalUsers">0</p>
     </div>
   </div>
 
@@ -187,60 +182,24 @@ header a{
 </div>
 
 <script>
-/* ================= CONFIG ================= */
-const BASE = "https://shopx-production-406f.up.railway.app";
-const ADMIN_KEY = "JD_ADMIN_2026";
+// ================= STATIC DASHBOARD DATA =================
+const dashboardData = {
+  products: 12,
+  orders: 37,
+  revenue: 125000,
+  users: 18
+};
 
-/* ================= HELPERS ================= */
-const formatMoney = n =>
-  "₹" + Number(n || 0).toLocaleString("en-IN");
-
-/* ================= LOAD DASHBOARD ================= */
-async function loadDashboard() {
-  try {
-    const [statsRes, usersRes] = await Promise.all([
-      fetch(BASE + "/api/admin/stats", {
-        headers: { "x-api-key": ADMIN_KEY }
-      }),
-      fetch(BASE + "/api/admin/users", {
-        headers: { "x-api-key": ADMIN_KEY }
-      })
-    ]);
-
-    if (!statsRes.ok || !usersRes.ok) {
-      throw new Error("Unauthorized");
-    }
-
-    const stats = await statsRes.json();
-    const users = await usersRes.json();
-
-    document.getElementById("totalProducts").textContent =
-      Number(stats?.products || 0);
-
-    document.getElementById("totalOrders").textContent =
-      Number(stats?.orders || 0);
-
-    document.getElementById("totalRevenue").textContent =
-      formatMoney(stats?.revenue);
-
-    document.getElementById("totalUsers").textContent =
-      Array.isArray(users) ? users.length : 0;
-
-  } catch (err) {
-    console.error(err);
-    alert("Admin access denied or server error");
-
-    document.getElementById("totalProducts").textContent = "0";
-    document.getElementById("totalOrders").textContent = "0";
-    document.getElementById("totalRevenue").textContent = "₹0";
-    document.getElementById("totalUsers").textContent = "0";
-  }
+function formatMoney(n){
+  return "₹" + n.toLocaleString("en-IN");
 }
 
-/* ================= INIT ================= */
-loadDashboard();
+// ================= LOAD DASHBOARD =================
+document.getElementById("totalProducts").textContent = dashboardData.products;
+document.getElementById("totalOrders").textContent = dashboardData.orders;
+document.getElementById("totalRevenue").textContent = formatMoney(dashboardData.revenue);
+document.getElementById("totalUsers").textContent = dashboardData.users;
 </script>
-
 
 </body>
 </html>

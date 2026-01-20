@@ -9,73 +9,106 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+
 body{
   font-family:Poppins,sans-serif;
-  background:black;
+  background:#000;
   color:white;
-  min-height:100vh
+  min-height:100vh;
+  overflow-x:hidden;
 }
+
+/* ================= HEADER ================= */
 header{
-  padding:18px 22px;
+  padding:16px 22px;
   border-bottom:1px solid #333;
   display:flex;
   justify-content:space-between;
-  align-items:center
+  align-items:center;
+  gap:12px;
 }
+
 header a{
   color:#4fb6e8;
   text-decoration:none;
   font-size:22px;
-  font-weight:600
+  font-weight:600;
 }
+
+header div{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:16px;
+}
+
+/* ================= CONTAINER ================= */
 .container{
   max-width:900px;
   margin:auto;
-  padding:28px
+  padding:26px 22px;
 }
+
+/* ================= CARD ================= */
 .card{
   background:#0f172a;
   border-radius:22px;
-  padding:24px
+  padding:24px;
 }
+
+/* ================= PROFILE TOP ================= */
 .profile-top{
   display:flex;
   gap:24px;
   align-items:center;
-  flex-wrap:wrap
+  flex-wrap:wrap;
 }
+
 .profile-pic{
-  width:130px;
-  height:130px;
+  width:120px;
+  height:120px;
   border-radius:50%;
   background:#1e293b;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:56px;
+  font-size:52px;
   cursor:pointer;
-  overflow:hidden
+  overflow:hidden;
+  flex-shrink:0;
 }
+
 .profile-pic img{
   width:100%;
   height:100%;
-  object-fit:cover
+  object-fit:cover;
 }
+
+/* ================= FORM ================= */
 label{
   font-size:13px;
   color:#cbd5e1;
-  margin-top:12px;
-  display:block
+  margin-top:14px;
+  display:block;
 }
+
 input,textarea{
   width:100%;
   margin-top:6px;
-  padding:12px;
+  padding:12px 14px;
   border-radius:14px;
   border:1px solid #334155;
   background:#020617;
-  color:white
+  color:white;
+  outline:none;
+  font-size:14px;
 }
+
+textarea{
+  resize:vertical;
+  min-height:90px;
+}
+
 button{
   margin-top:18px;
   padding:14px;
@@ -84,13 +117,71 @@ button{
   color:white;
   border:none;
   font-weight:600;
-  cursor:pointer
+  cursor:pointer;
+  width:100%;
 }
+
+/* ================= LOGOUT ================= */
 .logout{
   background:#dc2626;
   padding:8px 14px;
   border-radius:12px;
-  font-size:13px
+  font-size:13px;
+  width:auto;
+}
+
+/* ================= TABLET ================= */
+@media (max-width:768px){
+  .profile-top{
+    gap:18px;
+  }
+}
+
+/* ================= MOBILE ================= */
+@media (max-width:480px){
+  header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  header a{
+    font-size:20px;
+  }
+
+  header div{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  .container{
+    padding:18px 14px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+  .profile-top{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .profile-pic{
+    width:100px;
+    height:100px;
+    font-size:44px;
+  }
+}
+
+/* ================= SMALL MOBILE ================= */
+@media (max-width:360px){
+  label{
+    font-size:12px;
+  }
+
+  input,textarea{
+    font-size:13px;
+  }
 }
 </style>
 </head>
@@ -114,7 +205,7 @@ button{
     <img id="profileImage" hidden>
   </div>
 
-  <div style="flex:1">
+  <div style="flex:1;width:100%">
     <label>Full Name</label>
     <input id="name">
 
@@ -260,8 +351,8 @@ function logout(){
 /* ================= INIT ================= */
 (async()=>{
   userId = await getUserId();
-  loadLocal();      // instant UI restore
-  await loadProfile(); // backend sync
+  loadLocal();
+  await loadProfile();
 })();
 </script>
 

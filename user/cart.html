@@ -25,7 +25,7 @@ body{
   min-height:100vh;
 }
 
-/* ================= HEADER (MATCH INDEX) ================= */
+/* ================= HEADER ================= */
 header{
   display:flex;
   align-items:center;
@@ -35,7 +35,6 @@ header{
   backdrop-filter:blur(14px);
   position:sticky;
   top:0;
-  z-index:50;
 }
 
 header a{
@@ -74,13 +73,10 @@ header h2{
   height:96px;
   border-radius:14px;
   object-fit:cover;
-  background:#000;
 }
 
 /* ================= ITEM INFO ================= */
-.item-info{
-  flex:1;
-}
+.item-info{flex:1}
 
 .item-info h4{
   font-size:16px;
@@ -132,8 +128,6 @@ header h2{
   color:white;
 }
 
-.btn-danger:hover{opacity:.85}
-
 .btn-primary{
   background:linear-gradient(135deg,var(--primary),var(--primary2));
   color:white;
@@ -147,8 +141,8 @@ header h2{
   border-radius:22px;
   padding:20px;
   display:flex;
-  align-items:center;
   justify-content:space-between;
+  align-items:center;
 }
 
 .cart-summary strong{
@@ -163,13 +157,7 @@ header h2{
 }
 
 /* ================= RESPONSIVE ================= */
-@media(max-width:768px){
-  .container{padding:18px}
-}
-
 @media(max-width:480px){
-  header h2{font-size:16px}
-
   .cart-item{
     flex-direction:column;
     align-items:flex-start;
@@ -180,18 +168,14 @@ header h2{
     height:200px;
   }
 
-  .btn-danger{
+  .btn-danger,
+  .btn-primary{
     width:100%;
-    margin-top:10px;
   }
 
   .cart-summary{
     flex-direction:column;
     gap:14px;
-  }
-
-  .btn-primary{
-    width:100%;
   }
 }
 </style>
@@ -200,27 +184,36 @@ header h2{
 <body>
 
 <header>
-  <a href="../index.html">←</a>
+  <a href="index.html">←</a>
   <h2>My Cart</h2>
 </header>
 
 <div class="container" id="cartBox"></div>
 
 <script>
-"use strict";
+// ================= STATIC CART DATA =================
+let cart = [
+  {
+    name: "Wireless Headphones",
+    price: 1999,
+    qty: 1,
+    image: "https://via.placeholder.com/300"
+  },
+  {
+    name: "Smart Watch",
+    price: 2999,
+    qty: 2,
+    image: "https://via.placeholder.com/300"
+  }
+];
 
-/* ================= BACKEND (NOT USED HERE) ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-
-/* ================= STATE ================= */
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
 const cartBox = document.getElementById("cartBox");
 
-/* ================= RENDER CART ================= */
-function renderCart() {
+// ================= RENDER CART =================
+function renderCart(){
   cartBox.innerHTML = "";
 
-  if (cart.length === 0) {
+  if(cart.length === 0){
     cartBox.innerHTML = `
       <div class="empty">
         <h3>Your cart is empty</h3>
@@ -230,65 +223,53 @@ function renderCart() {
 
   let total = 0;
 
-  cart.forEach((p, i) => {
-    p.qty = Number(p.qty) || 1;
-    total += p.price * p.qty;
+  cart.forEach((item,index)=>{
+    total += item.price * item.qty;
 
-    cartBox.insertAdjacentHTML("beforeend", `
+    cartBox.innerHTML += `
       <div class="cart-item">
-        <img src="${p.image || "https://via.placeholder.com/300"}">
+        <img src="${item.image}">
         <div class="item-info">
-          <h4>${p.name}</h4>
-          <p>₹${p.price}</p>
+          <h4>${item.name}</h4>
+          <p>₹${item.price}</p>
           <div class="qty-controls">
-            <button onclick="updateQty(${i}, -1)">−</button>
-            <span>${p.qty}</span>
-            <button onclick="updateQty(${i}, 1)">+</button>
+            <button onclick="changeQty(${index},-1)">−</button>
+            <span>${item.qty}</span>
+            <button onclick="changeQty(${index},1)">+</button>
           </div>
         </div>
-        <button class="btn btn-danger" onclick="removeItem(${i})">
+        <button class="btn btn-danger" onclick="removeItem(${index})">
           Remove
         </button>
       </div>
-    `);
+    `;
   });
 
-  cartBox.insertAdjacentHTML("beforeend", `
+  cartBox.innerHTML += `
     <div class="cart-summary">
       <strong>Total: ₹${total}</strong>
-      <button class="btn btn-primary" onclick="checkout()">
+      <button class="btn btn-primary" onclick="alert('Checkout Demo')">
         Checkout
       </button>
     </div>
-  `);
+  `;
 }
 
-/* ================= ACTIONS ================= */
-function updateQty(index, delta) {
-  cart[index].qty += delta;
-  if (cart[index].qty < 1) cart[index].qty = 1;
-  saveCart();
-}
-
-function removeItem(index) {
-  cart.splice(index, 1);
-  saveCart();
-}
-
-function saveCart() {
-  localStorage.setItem("cart", JSON.stringify(cart));
+// ================= ACTIONS =================
+function changeQty(i,delta){
+  cart[i].qty += delta;
+  if(cart[i].qty < 1) cart[i].qty = 1;
   renderCart();
 }
 
-function checkout() {
-  localStorage.setItem("checkout_cart", JSON.stringify(cart));
-  window.location.href = "checkout.html";
+function removeItem(i){
+  cart.splice(i,1);
+  renderCart();
 }
 
-/* ================= INIT ================= */
+// ================= INIT =================
 renderCart();
 </script>
-
 
 </body>
 </html>

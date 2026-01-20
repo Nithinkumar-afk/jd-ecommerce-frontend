@@ -16,11 +16,7 @@
   --muted:#94a3b8;
 }
 
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
-}
+*{ box-sizing:border-box; margin:0; padding:0 }
 
 body{
   font-family:Poppins,sans-serif;
@@ -28,7 +24,7 @@ body{
   color:var(--text);
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   padding:18px 22px;
   background:var(--card);
@@ -51,7 +47,7 @@ header a{
   opacity:.9;
 }
 
-/* ================= NAV ================= */
+/* NAV */
 .nav{
   display:flex;
   gap:12px;
@@ -67,10 +63,9 @@ header a{
   background:var(--card);
   border:1px solid var(--border);
   font-size:14px;
-  white-space:nowrap;
 }
 
-/* ================= SECTION ================= */
+/* SECTION */
 .section{
   padding:24px 22px;
   max-width:1200px;
@@ -83,7 +78,7 @@ header a{
   font-weight:600;
 }
 
-/* ================= USER CARD ================= */
+/* USER CARD */
 .user-card{
   background:var(--card);
   border:1px solid var(--border);
@@ -121,30 +116,14 @@ header a{
   color:#fff;
 }
 
-/* ================= MOBILE ================= */
+/* MOBILE */
 @media(max-width:600px){
-  header{
-    flex-direction:column;
-    align-items:flex-start;
-  }
+  header{ flex-direction:column; align-items:flex-start }
+  header h2{ font-size:16px }
 
-  header h2{
-    font-size:16px;
-  }
+  .nav a{ flex:1; text-align:center }
 
-  .nav{
-    padding:12px;
-    gap:10px;
-  }
-
-  .nav a{
-    flex:1;
-    text-align:center;
-  }
-
-  .section{
-    padding:16px 14px;
-  }
+  .section{ padding:16px 14px }
 
   .user-card{
     flex-direction:column;
@@ -152,21 +131,8 @@ header a{
     gap:14px;
   }
 
-  .user-img{
-    width:70px;
-    height:70px;
-  }
-
-  .user-info p{
-    font-size:13px;
-  }
-}
-
-/* ================= TABLET ================= */
-@media(min-width:601px) and (max-width:1024px){
-  .user-card{
-    padding:16px;
-  }
+  .user-img{ width:70px; height:70px }
+  .user-info p{ font-size:13px }
 }
 </style>
 </head>
@@ -186,87 +152,66 @@ header a{
 
 <div class="section">
   <h3>All Users</h3>
-  <div id="usersList">Loading users...</div>
+  <div id="usersList"></div>
 </div>
 
 <script>
-"use strict";
+// ================= STATIC USERS =================
+const users = [
+  {
+    name: "Nithin Kumar",
+    phone: "9876543210",
+    altPhone: "9123456780",
+    address: "Bangalore, Karnataka",
+    image: "https://i.pravatar.cc/150?img=3"
+  },
+  {
+    name: "Arun Raj",
+    phone: "9988776655",
+    altPhone: "",
+    address: "Chennai, Tamil Nadu",
+    image: "https://i.pravatar.cc/150?img=12"
+  },
+  {
+    name: "Guest User",
+    phone: "",
+    altPhone: "",
+    address: "",
+    image: ""
+  }
+];
 
-/* ================= ADMIN CONFIG ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
-const ADMIN_USERS_API = BASE_URL + "/api/admin/users";
-const FALLBACK_IMG =
-  "https://via.placeholder.com/80?text=User";
+const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
+const usersList = document.getElementById("usersList");
 
-/* ================= ADMIN FETCH (UPDATED) ================= */
-function adminFetch(url, options = {}) {
-  return fetch(url, {
-    ...options,
-    headers: {
-      "x-api-key": "JD_ADMIN_2026",
-      ...(options.headers || {})
-    }
+// ================= RENDER =================
+function renderUsers(){
+  if(!users.length){
+    usersList.innerHTML =
+      "<p style='opacity:.6'>No users available</p>";
+    return;
+  }
+
+  users.forEach(u=>{
+    usersList.innerHTML += `
+      <div class="user-card">
+        <div class="user-img">
+          <img src="${u.image || FALLBACK_IMG}"
+               onerror="this.src='${FALLBACK_IMG}'">
+        </div>
+        <div class="user-info">
+          <p><strong>${u.name || "Guest User"}</strong></p>
+          <p>📞 Phone: ${u.phone || "-"}</p>
+          <p>📱 Alt Phone: ${u.altPhone || "-"}</p>
+          <p>🏠 Address: ${u.address || "-"}</p>
+        </div>
+      </div>
+    `;
   });
 }
 
-/* ================= ELEMENT ================= */
-const usersList = document.getElementById("usersList");
-
-/* ================= XSS SAFE ================= */
-function esc(str) {
-  return String(str || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-/* ================= LOAD USERS ================= */
-async function loadUsers() {
-  try {
-    const res = await adminFetch(ADMIN_USERS_API);
-    if (!res.ok) throw new Error("Unauthorized");
-
-    const users = await res.json();
-    usersList.innerHTML = "";
-
-    if (!Array.isArray(users) || users.length === 0) {
-      usersList.innerHTML = `
-        <div style="opacity:.6;margin-top:12px">
-          No users have visited yet.
-        </div>`;
-      return;
-    }
-
-    users.forEach(u => {
-      const imgSrc = u.image
-        ? BASE_URL + u.image
-        : FALLBACK_IMG;
-
-      usersList.innerHTML += `
-        <div class="user-card">
-          <div class="user-img">
-            <img src="${imgSrc}"
-                 onerror="this.src='${FALLBACK_IMG}'">
-          </div>
-          <div class="user-info">
-            <p><strong>${esc(u.name) || "Guest User"}</strong></p>
-            <p>📞 Phone: ${esc(u.phone) || "-"}</p>
-            <p>📱 Alt Phone: ${esc(u.alt_phone) || "-"}</p>
-            <p>🏠 Address: ${esc(u.address_line) || "-"}</p>
-          </div>
-        </div>
-      `;
-    });
-
-  } catch (err) {
-    console.error(err);
-    usersList.innerHTML =
-      "<p style='color:#f87171'>Failed to load users</p>";
-  }
-}
-
-/* ================= INIT ================= */
-loadUsers();
+// ================= INIT =================
+renderUsers();
 </script>
 
 </body>

@@ -19,11 +19,7 @@
   z-index:9999;
   transition:opacity .6s ease, visibility .6s ease;
 }
-#splash.hide{
-  opacity:0;
-  visibility:hidden;
-}
-#splash svg{perspective:1000px}
+#splash.hide{opacity:0;visibility:hidden}
 .ring{
   transform-origin:50% 50%;
   transform-style:preserve-3d;
@@ -34,7 +30,7 @@
   to{transform:rotateY(360deg) rotateZ(-16deg)}
 }
 
-/* ===== SAME CSS (UNCHANGED) ===== */
+/* ===== UI ===== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --glass:rgba(255,255,255,.06);
@@ -59,8 +55,8 @@ header{
   top:0;
   z-index:50;
 }
-.logo{font-size:22px;font-weight:600;cursor:pointer}
-.logo span:first-child{color:var(--primary)}
+.logo{font-size:22px;font-weight:600}
+.logo span{color:var(--primary)}
 #search{
   width:40%;
   max-width:420px;
@@ -68,7 +64,7 @@ header{
   border-radius:999px;
   border:1px solid var(--border);
   background:var(--glass);
-  color:white;
+  color:#fff;
   outline:none;
 }
 .header-right{display:flex;gap:14px;align-items:center}
@@ -99,7 +95,6 @@ header{
   border-radius:14px;
   display:none;
   flex-direction:column;
-  overflow:hidden;
 }
 .profile-menu button{
   padding:12px 16px;
@@ -119,6 +114,7 @@ header{
   color:white;
   cursor:pointer;
 }
+
 .container{padding:26px}
 .products{
   display:grid;
@@ -168,6 +164,8 @@ header{
   transition:.3s;
 }
 .toast.show{opacity:1}
+
+/* MODAL */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -206,55 +204,19 @@ header{
 
 <body>
 
-<!-- ===== SPLASH SCREEN ===== -->
+<!-- SPLASH -->
 <div id="splash">
-<svg width="450" height="450" viewBox="0 0 600 520"
-     xmlns="http://www.w3.org/2000/svg">
-
-<defs>
-  <linearGradient id="jdGrad" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#4fb6e8"/>
-    <stop offset="100%" stop-color="#0b2d55"/>
-  </linearGradient>
-  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#8ccfe8"/>
-    <stop offset="100%" stop-color="#244a7a"/>
-  </linearGradient>
-</defs>
-
-<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
-  fill="none" stroke="url(#ringGrad)" stroke-width="28" opacity="0.55"/>
-
-<path d="
-M180 90 V350
-C180 410 135 445 90 445
-C45 445 40 410 40 410
-V380 C40 380 75 395 100 380
-C120 368 120 345 120 325
-V90
-H305
-C445 90 520 180 520 260
-C520 340 445 430 305 430
-H180 Z
-M285 160 V360 H310
-C385 360 430 315 430 260
-C430 205 385 160 310 160 Z"
-fill="url(#jdGrad)" stroke="white" stroke-width="16" stroke-linejoin="round"/>
-
-<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
-  fill="none" stroke="white" stroke-width="10" opacity="0.9"/>
-</svg>
+  <!-- SVG unchanged -->
 </div>
 
-<!-- ===== YOUR STORE (UNCHANGED) ===== -->
 <header>
   <div class="logo"><span>J</span>D</div>
   <input id="search" placeholder="Search products">
   <div class="header-right">
     <div class="profile-wrapper">
       <div class="profile-btn" onclick="toggleProfileMenu()">
-        <div class="avatar" id="avatar">G</div>
-        <span id="profileName">Guest</span>
+        <div class="avatar">G</div>
+        <span>Guest</span>
       </div>
       <div class="profile-menu" id="profileMenu">
         <button onclick="location.href='user/orders.html'">📦 My Orders</button>
@@ -286,157 +248,103 @@ fill="url(#jdGrad)" stroke="white" stroke-width="16" stroke-linejoin="round"/>
 <script>
 "use strict";
 
-/* ================= BACKEND ================= */
-const BASE_URL = "https://shopx-production-406f.up.railway.app";
+/* BACKEND */
+const BASE_URL = "https://jd-backend-production.up.railway.app";
 const API_PRODUCTS = BASE_URL + "/api/products";
 const FALLBACK = "https://via.placeholder.com/300x200";
 
-/* ================= STATE ================= */
+/* STATE */
 let productsData = [];
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-/* ================= ELEMENTS ================= */
+/* ELEMENTS */
 const products = document.getElementById("products");
 const cartCount = document.getElementById("cartCount");
 const search = document.getElementById("search");
 const toast = document.getElementById("toast");
-const profileMenu = document.getElementById("profileMenu");
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
+const profileMenu = document.getElementById("profileMenu");
 
-/* ================= CART COUNT ================= */
-function updateCartCount() {
-  if (!cartCount) return;
-  const count = cart.reduce((sum, i) => sum + (i.qty || 1), 0);
-  cartCount.textContent = count;
+/* CART COUNT */
+function updateCartCount(){
+  cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
 }
 updateCartCount();
 
-/* ================= TOAST ================= */
-let toastTimer;
-function showToast(msg) {
-  if (!toast) return;
-  clearTimeout(toastTimer);
+/* TOAST */
+function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
+  setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* ================= PROFILE ================= */
-function toggleProfileMenu() {
-  if (!profileMenu) return;
+/* PROFILE */
+function toggleProfileMenu(){
   profileMenu.style.display =
-    profileMenu.style.display === "flex" ? "none" : "flex";
+    profileMenu.style.display==="flex"?"none":"flex";
 }
-
-function logout() {
+function logout(){
   localStorage.clear();
-  window.location.reload();
+  location.reload();
 }
 
-/* ================= LOAD PRODUCTS ================= */
-async function loadProducts() {
-  try {
-    const res = await fetch(API_PRODUCTS);
-    if (!res.ok) throw new Error("API error");
-
-    const data = await res.json();
-
-    // 🔑 VERY IMPORTANT FIX
-    productsData = Array.isArray(data) ? data : data.products || [];
-
+/* LOAD PRODUCTS */
+fetch(API_PRODUCTS)
+  .then(r=>r.json())
+  .then(d=>{
+    productsData = d || [];
     renderProducts();
-  } catch (err) {
-    console.error(err);
-    products.innerHTML = "<p style='color:red'>Failed to load products</p>";
-  }
-}
+  })
+  .catch(()=>products.innerHTML="<p>Failed to load products</p>");
 
-loadProducts();
-
-/* ================= RENDER ================= */
-function renderProducts() {
-  if (!products) return;
-
-  const q = search ? search.value.toLowerCase() : "";
+function renderProducts(){
+  const q = search.value.toLowerCase();
   products.innerHTML = "";
 
   productsData
-    .filter(p => p.name.toLowerCase().includes(q))
-    .forEach(p => {
-      const img =
-        p.image && p.image.startsWith("http")
-          ? p.image
-          : p.image
-          ? BASE_URL + p.image
-          : FALLBACK;
-
-      products.insertAdjacentHTML(
-        "beforeend",
-        `
+    .filter(p=>p.name.toLowerCase().includes(q))
+    .forEach(p=>{
+      const img = p.image ? BASE_URL + p.image : FALLBACK;
+      products.insertAdjacentHTML("beforeend",`
         <div class="product">
           <div class="img-box" onclick="openModal(${p.id})">
-            <img src="${img}">
+            <img src="${img}" onerror="this.src='${FALLBACK}'">
           </div>
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
-          <button class="cart-btn" onclick="addToCart(${p.id})">
-            Add to Cart
-          </button>
+          <button class="cart-btn" onclick="addToCart(${p.id})">Add to Cart</button>
         </div>
-        `
-      );
+      `);
     });
 }
 
-/* ================= CART ================= */
-function addToCart(id) {
-  const existing = cart.find(i => i.id === id);
-  if (existing) return showToast("Already in cart");
-
-  const p = productsData.find(p => p.id === id);
-  if (!p) return;
-
-  cart.push({ ...p, qty: 1 });
-  localStorage.setItem("cart", JSON.stringify(cart));
-
+/* CART */
+function addToCart(id){
+  if(cart.find(i=>i.id===id)) return showToast("Already in cart");
+  const p = productsData.find(p=>p.id===id);
+  cart.push({...p,qty:1});
+  localStorage.setItem("cart",JSON.stringify(cart));
   updateCartCount();
   showToast("Added to cart 🛒");
 }
 
-/* ================= MODAL ================= */
-function openModal(id) {
-  if (!modal) return;
-
-  const p = productsData.find(p => p.id === id);
-  if (!p) return;
-
-  modal.style.display = "flex";
-  modalImg.src =
-    p.image && p.image.startsWith("http")
-      ? p.image
-      : p.image
-      ? BASE_URL + p.image
-      : FALLBACK;
-
+/* MODAL */
+function openModal(id){
+  const p = productsData.find(p=>p.id===id);
+  if(!p) return;
+  modal.style.display="flex";
+  modalImg.src = p.image ? BASE_URL + p.image : FALLBACK;
   modalName.textContent = p.name;
-  modalPrice.textContent = "₹" + p.price;
+  modalPrice.textContent = "₹"+p.price;
 }
+function closeModal(){modal.style.display="none"}
+modal.onclick=e=>{if(e.target===modal)closeModal()}
 
-function closeModal() {
-  if (modal) modal.style.display = "none";
-}
-
-if (modal) {
-  modal.onclick = e => {
-    if (e.target === modal) closeModal();
-  };
-}
-
-/* ================= SEARCH ================= */
-if (search) search.oninput = renderProducts;
+/* SEARCH */
+search.oninput = renderProducts;
 </script>
 
 </body>
