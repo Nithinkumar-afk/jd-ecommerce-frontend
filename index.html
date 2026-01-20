@@ -20,15 +20,6 @@
   transition:opacity .6s ease, visibility .6s ease;
 }
 #splash.hide{opacity:0;visibility:hidden}
-.ring{
-  transform-origin:50% 50%;
-  transform-style:preserve-3d;
-  animation:saturnHorizontal 36s linear infinite;
-}
-@keyframes saturnHorizontal{
-  from{transform:rotateY(0deg) rotateZ(-16deg)}
-  to{transform:rotateY(360deg) rotateZ(-16deg)}
-}
 
 /* ===== UI ===== */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -204,14 +195,10 @@ header{
 
 <body>
 
-<!-- SPLASH -->
-<div id="splash">
-  <!-- SVG unchanged -->
-</div>
-
 <header>
   <div class="logo"><span>J</span>D</div>
   <input id="search" placeholder="Search products">
+
   <div class="header-right">
     <div class="profile-wrapper">
       <div class="profile-btn" onclick="toggleProfileMenu()">
@@ -219,12 +206,14 @@ header{
         <span>Guest</span>
       </div>
       <div class="profile-menu" id="profileMenu">
-        <button onclick="location.href='user/orders.html'">📦 My Orders</button>
-        <button onclick="location.href='user/profile.html'">👤 Profile</button>
+        <button onclick="location.href='orders.html'">📦 My Orders</button>
+        <button onclick="location.href='profile.html'">👤 Profile</button>
         <button class="logout" onclick="logout()">🚪 Logout</button>
       </div>
     </div>
-    <button class="cart" onclick="location.href='user/cart.html'">
+
+    <!-- ✅ FIXED HERE -->
+    <button class="cart" onclick="location.href='cart.html'">
       Cart (<span id="cartCount">0</span>)
     </button>
   </div>
@@ -248,16 +237,33 @@ header{
 <script>
 "use strict";
 
-/* BACKEND */
-const BASE_URL = "https://jd-backend-production.up.railway.app";
-const API_PRODUCTS = BASE_URL + "/api/products";
+/* ===============================
+   BACKEND CONFIG
+================================ */
+const API = window.APP_CONFIG.API_BASE;
+const API_PRODUCTS = API + "/api/products";
 const FALLBACK = "https://via.placeholder.com/300x200";
 
-/* STATE */
-let productsData = [];
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+/* ===============================
+   USER INIT (AUTO)
+================================ */
+if (!localStorage.getItem("jd_user_id")) {
+  fetch(API + "/api/profile/init", { method: "POST" })
+    .then(res => res.json())
+    .then(d => {
+      localStorage.setItem("jd_user_id", d.userId);
+    });
+}
 
-/* ELEMENTS */
+/* ===============================
+   STATE
+================================ */
+let productsData = [];
+let cart = JSON.parse(localStorage.getItem("jd_cart")) || [];
+
+/* ===============================
+   ELEMENTS
+================================ */
 const products = document.getElementById("products");
 const cartCount = document.getElementById("cartCount");
 const search = document.getElementById("search");
@@ -268,37 +274,48 @@ const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
 const profileMenu = document.getElementById("profileMenu");
 
-/* CART COUNT */
+/* ===============================
+   CART COUNT
+================================ */
 function updateCartCount(){
   cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
 }
 updateCartCount();
 
-/* TOAST */
+/* ===============================
+   TOAST
+================================ */
 function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* PROFILE */
+/* ===============================
+   PROFILE
+================================ */
 function toggleProfileMenu(){
   profileMenu.style.display =
     profileMenu.style.display==="flex"?"none":"flex";
 }
+
 function logout(){
   localStorage.clear();
-  location.reload();
+  location.href = "index.html";
 }
 
-/* LOAD PRODUCTS */
+/* ===============================
+   LOAD PRODUCTS (BACKEND)
+================================ */
 fetch(API_PRODUCTS)
   .then(r=>r.json())
   .then(d=>{
     productsData = d || [];
     renderProducts();
   })
-  .catch(()=>products.innerHTML="<p>Failed to load products</p>");
+  .catch(()=>{
+    products.innerHTML="<p>Failed to load products</p>";
+  });
 
 function renderProducts(){
   const q = search.value.toLowerCase();
@@ -307,7 +324,8 @@ function renderProducts(){
   productsData
     .filter(p=>p.name.toLowerCase().includes(q))
     .forEach(p=>{
-      const img = p.image ? BASE_URL + p.image : FALLBACK;
+      const img = p.image ? API + p.image : FALLBACK;
+
       products.insertAdjacentHTML("beforeend",`
         <div class="product">
           <div class="img-box" onclick="openModal(${p.id})">
@@ -315,36 +333,58 @@ function renderProducts(){
           </div>
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
-          <button class="cart-btn" onclick="addToCart(${p.id})">Add to Cart</button>
+          <button class="cart-btn" onclick="addToCart(${p.id})">
+            Add to Cart
+          </button>
         </div>
       `);
     });
 }
 
-/* CART */
+/* ===============================
+   CART
+================================ */
 function addToCart(id){
-  if(cart.find(i=>i.id===id)) return showToast("Already in cart");
+  if(cart.find(i=>i.id===id)) {
+    showToast("Already in cart");
+    return;
+  }
+
   const p = productsData.find(p=>p.id===id);
-  cart.push({...p,qty:1});
-  localStorage.setItem("cart",JSON.stringify(cart));
+  if(!p) return;
+
+  cart.push({...p, qty:1});
+  localStorage.setItem("jd_cart", JSON.stringify(cart));
   updateCartCount();
   showToast("Added to cart 🛒");
 }
 
-/* MODAL */
+/* ===============================
+   MODAL
+================================ */
 function openModal(id){
   const p = productsData.find(p=>p.id===id);
   if(!p) return;
+
   modal.style.display="flex";
-  modalImg.src = p.image ? BASE_URL + p.image : FALLBACK;
+  modalImg.src = p.image ? API + p.image : FALLBACK;
   modalName.textContent = p.name;
   modalPrice.textContent = "₹"+p.price;
 }
-function closeModal(){modal.style.display="none"}
-modal.onclick=e=>{if(e.target===modal)closeModal()}
 
-/* SEARCH */
+function closeModal(){
+  modal.style.display="none";
+}
+
+modal.onclick = e => {
+  if(e.target === modal) closeModal();
+};
+
+/* ===============================
+   SEARCH
+================================ */
 search.oninput = renderProducts;
+
 </script>
 
 </body>

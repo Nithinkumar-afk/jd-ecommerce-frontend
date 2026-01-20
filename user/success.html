@@ -113,55 +113,87 @@ body{
   </div>
 </div>
 
+<script src="../config.js"></script>
 <script>
 "use strict";
 
-/* ===============================
-   LOAD LAST ORDER
-================================ */
-const lastOrderRaw = localStorage.getItem("last_order");
+/* ================= CONFIG ================= */
+const BASE_URL = window.APP_CONFIG.API_BASE;
+const API_ORDERS = BASE_URL + "/api/orders";
 
-if (!lastOrderRaw) {
-  alert("No recent order found");
-  window.location.href = "../index.html";
+/* ================= AUTH ================= */
+const USER_ID = localStorage.getItem("user_id");
+const ORDER_ID = localStorage.getItem("last_order_id");
+
+if (!USER_ID || !ORDER_ID) {
+  location.href = "../index.html";
 }
 
-const lastOrder = JSON.parse(lastOrderRaw);
-
-/* ===============================
-   ELEMENTS
-================================ */
+/* ================= ELEMENTS ================= */
 const orderIdEl = document.getElementById("orderId");
 const orderTotalEl = document.getElementById("orderTotal");
 const itemsBox = document.getElementById("orderItems");
 
-/* ===============================
-   RENDER ORDER
-================================ */
-orderIdEl.textContent = lastOrder.id;
-orderTotalEl.textContent = `₹${Number(lastOrder.total).toFixed(2)}`;
+/* ================= LOAD ORDER ================= */
+fetch(`${API_ORDERS}/${ORDER_ID}`, {
+  headers: { "x-user-id": USER_ID }
+})
+.then(res => res.json())
+.then(order => {
+  // Display order details
+  orderIdEl.textContent = order.id;
+  orderTotalEl.textContent = Number(order.total).toLocaleString("en-IN");
 
-itemsBox.innerHTML = "";
+  itemsBox.innerHTML = "";
+  order.items.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    itemsBox.innerHTML += `
+      <div class="item">
+        <div>${item.name} × ${item.qty}</div>
+        <div>₹${itemTotal.toLocaleString("en-IN")}</div>
+      </div>
+    `;
+  });
 
-lastOrder.items.forEach(item => {
-  const qty = Number(item.qty) || 1;
-  const price = Number(item.price) || 0;
-  const itemTotal = price * qty;
-
-  itemsBox.innerHTML += `
-    <div class="item">
-      <div>${item.name} × ${qty}</div>
-      <div>₹${itemTotal.toFixed(2)}</div>
-    </div>
-  `;
+  // Clear cart and remove last order id after showing
+  localStorage.removeItem("cart");
+  setTimeout(() => {
+    localStorage.removeItem("last_order_id");
+  }, 5000);
+})
+.catch(() => {
+  alert("Failed to load order details");
+  location.href = "../index.html";
 });
 
-/* ===============================
-   CLEANUP (OPTIONAL)
-================================ */
-setTimeout(() => {
-  localStorage.removeItem("last_order");
-}, 10000);
+/* ================= PLACE ORDER (example) ================= */
+/* 
+  Example fetch to place order from cart:
+  This part goes in your checkout page, not success.html
+*/
+function placeOrder(cartItems) {
+  fetch(`${API_ORDERS}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": USER_ID
+    },
+    body: JSON.stringify({ items: cartItems })
+  })
+  .then(res => res.json())
+  .then(data => {
+    // Save last order id
+    localStorage.setItem("last_order_id", data.id);
+    // Clear cart
+    localStorage.removeItem("cart");
+    // Redirect to success page
+    location.href = "success.html";
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to place order");
+  });
+}
 </script>
 
 </body>

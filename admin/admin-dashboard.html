@@ -153,12 +153,12 @@ header a{
   <div class="cards">
     <div class="card">
       <h3>Total Products</h3>
-      <p id="totalProducts">0</p>
+      <p id="totalProducts">–</p>
     </div>
 
     <div class="card">
       <h3>Total Orders</h3>
-      <p id="totalOrders">0</p>
+      <p id="totalOrders">–</p>
     </div>
 
     <div class="card">
@@ -168,7 +168,7 @@ header a{
 
     <div class="card">
       <h3>Total Users</h3>
-      <p id="totalUsers">0</p>
+      <p id="totalUsers">–</p>
     </div>
   </div>
 
@@ -181,25 +181,77 @@ header a{
 
 </div>
 
+<script src="../config.js"></script>
 <script>
-// ================= STATIC DASHBOARD DATA =================
-const dashboardData = {
-  products: 12,
-  orders: 37,
-  revenue: 125000,
-  users: 18
-};
+"use strict";
 
-function formatMoney(n){
-  return "₹" + n.toLocaleString("en-IN");
+/* ================= SECURITY ================= */
+const ADMIN_KEY = localStorage.getItem("jd_admin");
+if (!ADMIN_KEY) {
+  alert("Unauthorized access");
+  location.href = "../index.html";
 }
 
-// ================= LOAD DASHBOARD =================
-document.getElementById("totalProducts").textContent = dashboardData.products;
-document.getElementById("totalOrders").textContent = dashboardData.orders;
-document.getElementById("totalRevenue").textContent = formatMoney(dashboardData.revenue);
-document.getElementById("totalUsers").textContent = dashboardData.users;
+/* ================= CONFIG ================= */
+const API = window.APP_CONFIG.API_BASE;
+
+function formatMoney(n){
+  return "₹" + Number(n || 0).toLocaleString("en-IN");
+}
+
+/* ================= ELEMENTS ================= */
+const totalProductsEl = document.getElementById("totalProducts");
+const totalUsersEl = document.getElementById("totalUsers");
+const totalOrdersEl = document.getElementById("totalOrders");
+const totalRevenueEl = document.getElementById("totalRevenue");
+
+/* ================= LOAD DASHBOARD ================= */
+async function loadDashboard(){
+  try{
+    /* PRODUCTS */
+    const productsRes = await fetch(API + "/api/products");
+    const products = await productsRes.json();
+    totalProductsEl.textContent = Array.isArray(products)
+      ? products.length
+      : 0;
+
+    /* USERS (ADMIN) */
+    const usersRes = await fetch(API + "/api/users", {
+      headers: { "x-api-key": ADMIN_KEY }
+    });
+    const users = await usersRes.json();
+    totalUsersEl.textContent = Array.isArray(users)
+      ? users.length
+      : 0;
+
+    /* ORDERS + REVENUE (ADMIN) */
+    const statsRes = await fetch(API + "/api/orders/admin", {
+      headers: { "x-api-key": ADMIN_KEY }
+    });
+    const stats = await statsRes.json();
+
+    totalOrdersEl.textContent =
+      stats.totalOrders ?? 0;
+
+    totalRevenueEl.textContent =
+      formatMoney(stats.totalRevenue ?? 0);
+
+  } catch (err) {
+    console.error("Dashboard error:", err);
+
+    totalProductsEl.textContent = "—";
+    totalUsersEl.textContent = "—";
+    totalOrdersEl.textContent = "—";
+    totalRevenueEl.textContent = "—";
+
+    alert("Failed to load dashboard data");
+  }
+}
+
+/* ================= INIT ================= */
+loadDashboard();
 </script>
+
 
 </body>
 </html>

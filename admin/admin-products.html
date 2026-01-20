@@ -162,12 +162,18 @@ textarea{resize:vertical}
 "use strict";
 
 /* ================= CONFIG ================= */
-const BASE = "https://jd-backend-production.up.railway.app";
+const BASE = window.APP_CONFIG.API_BASE;   // ✅ GLOBAL CONFIG
 const API  = BASE + "/api/products";
-const ADMIN_KEY = "JD_ADMIN_2026";
+const ADMIN_KEY = localStorage.getItem("jd_admin");
 
 const FALLBACK =
   "https://via.placeholder.com/400x250?text=No+Image";
+
+/* ================= AUTH CHECK ================= */
+if(!ADMIN_KEY){
+  alert("Admin not logged in");
+  location.href = "../index.html";
+}
 
 /* ================= ELEMENTS ================= */
 const list = document.getElementById("list");
@@ -178,8 +184,10 @@ const descEl  = document.getElementById("desc");
 
 /* ================= LOAD PRODUCTS ================= */
 async function loadProducts() {
+  list.innerHTML = "Loading products...";
   try {
     const res = await fetch(API);
+    if(!res.ok) throw new Error();
     const data = await res.json();
 
     list.innerHTML = "";
@@ -217,17 +225,15 @@ async function addProduct() {
   }
 
   const form = new FormData();
-  form.append("name", nameEl.value);
+  form.append("name", nameEl.value.trim());
   form.append("price", priceEl.value);
-  form.append("description", descEl.value || "");
+  form.append("description", descEl.value.trim());
   if (imageEl.files[0]) form.append("image", imageEl.files[0]);
 
   try {
     const res = await fetch(API, {
       method: "POST",
-      headers: {
-        "x-api-key": ADMIN_KEY
-      },
+      headers: { "x-api-key": ADMIN_KEY },
       body: form
     });
 
@@ -239,7 +245,7 @@ async function addProduct() {
     imageEl.value = "";
 
     loadProducts();
-    alert("Product added ✅");
+    alert("Product added successfully ✅");
 
   } catch {
     alert("Failed to add product");
@@ -253,13 +259,10 @@ async function deleteProduct(id) {
   try {
     const res = await fetch(`${API}/${id}`, {
       method: "DELETE",
-      headers: {
-        "x-api-key": ADMIN_KEY
-      }
+      headers: { "x-api-key": ADMIN_KEY }
     });
 
     if (!res.ok) throw new Error();
-
     loadProducts();
 
   } catch {

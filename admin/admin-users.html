@@ -152,66 +152,74 @@ header a{
 
 <div class="section">
   <h3>All Users</h3>
-  <div id="usersList"></div>
+  <div id="usersList">Loading users...</div>
 </div>
 
 <script>
-/* ================= SECURITY ================= */
-if (!localStorage.getItem("jd_admin")) {
-  alert("Unauthorized");
+"use strict";
+
+/* ================= AUTH ================= */
+const ADMIN_KEY = localStorage.getItem("jd_admin");
+if (!ADMIN_KEY) {
+  alert("Unauthorized access");
   location.href = "../index.html";
 }
 
 /* ================= CONFIG ================= */
-const API = window.APP_CONFIG
-  ? window.APP_CONFIG.API_BASE
-  : "https://jd-backend-production.up.railway.app";
-
+const API_BASE = window.APP_CONFIG.API_BASE; // ✅ GLOBAL CONFIG
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
 /* ================= LOAD USERS ================= */
-fetch(API + "/api/users", {
-  headers: {
-    "x-api-key": localStorage.getItem("jd_admin")
-  }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Unauthorized");
-  return res.json();
-})
-.then(users => {
-  if (!users.length) {
+async function loadUsers() {
+  try {
+    const res = await fetch(API_BASE + "/api/users", {
+      headers: { "x-api-key": ADMIN_KEY }
+    });
+
+    if (!res.ok) throw new Error();
+
+    const users = await res.json();
+    usersList.innerHTML = "";
+
+    if (!users.length) {
+      usersList.innerHTML =
+        "<p style='opacity:.6'>No users available</p>";
+      return;
+    }
+
+    users.forEach(u => {
+      const joined =
+        u.created_at
+          ? new Date(u.created_at).toLocaleDateString()
+          : "—";
+
+      usersList.innerHTML += `
+        <div class="user-card">
+          <div class="user-img">
+            <img src="${u.image ? API_BASE + u.image : FALLBACK_IMG}"
+                 onerror="this.src='${FALLBACK_IMG}'">
+          </div>
+          <div class="user-info">
+            <p><strong>${u.name || "Guest User"}</strong></p>
+            <p>📞 Phone: ${u.phone || "-"}</p>
+            <p>🏠 Address: ${u.address || "-"}</p>
+            <p style="font-size:12px;opacity:.6">
+              Joined: ${joined}
+            </p>
+          </div>
+        </div>
+      `;
+    });
+
+  } catch {
     usersList.innerHTML =
-      "<p style='opacity:.6'>No users available</p>";
-    return;
+      "<p style='color:#ff6b6b'>Failed to load users</p>";
   }
+}
 
-  usersList.innerHTML = "";
-
-  users.forEach(u => {
-    usersList.innerHTML += `
-      <div class="user-card">
-        <div class="user-img">
-          <img src="${u.image ? API + u.image : FALLBACK_IMG}"
-               onerror="this.src='${FALLBACK_IMG}'">
-        </div>
-        <div class="user-info">
-          <p><strong>${u.name || "Guest User"}</strong></p>
-          <p>📞 Phone: ${u.phone || "-"}</p>
-          <p>🏠 Address: ${u.address || "-"}</p>
-          <p style="font-size:12px;opacity:.6">
-            Joined: ${new Date(u.created_at).toLocaleDateString()}
-          </p>
-        </div>
-      </div>
-    `;
-  });
-})
-.catch(() => {
-  usersList.innerHTML =
-    "<p style='color:#ff6b6b'>Failed to load users</p>";
-});
+/* ================= INIT ================= */
+loadUsers();
 </script>
 
 </body>

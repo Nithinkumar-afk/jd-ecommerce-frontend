@@ -24,20 +24,17 @@ body{
   background:radial-gradient(circle at top,#0b0b0b,#000);
   color:#fff;
   min-height:100vh;
-  overflow-x:hidden;
 }
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   display:flex;
   align-items:center;
-  gap:14px;
   padding:14px 20px;
   border-bottom:1px solid var(--border);
   backdrop-filter:blur(14px);
   position:sticky;
   top:0;
-  z-index:50;
 }
 
 header h2{
@@ -45,10 +42,9 @@ header h2{
   font-weight:500;
   color:var(--primary);
   cursor:pointer;
-  white-space:nowrap;
 }
 
-/* ================= LAYOUT ================= */
+/* LAYOUT */
 .container{
   max-width:1200px;
   margin:auto;
@@ -58,7 +54,7 @@ header h2{
   gap:22px;
 }
 
-/* ================= CARD ================= */
+/* CARD */
 .card{
   background:#0f0f0f;
   border:1px solid var(--border);
@@ -68,11 +64,10 @@ header h2{
 
 .card h3{
   font-size:16px;
-  font-weight:500;
   margin-bottom:16px;
 }
 
-/* ================= FORM ================= */
+/* FORM */
 label{
   font-size:12px;
   opacity:.7;
@@ -91,19 +86,19 @@ input{
   outline:none;
 }
 
-/* ================= ADDRESS ================= */
+/* ADDRESS */
 .address-card{
-  display:grid;
-  grid-template-columns:22px 1fr;
-  gap:12px;
+  display:flex;
+  gap:10px;
   padding:14px;
   border-radius:16px;
   border:1px solid var(--border);
   background:var(--glass);
   font-size:14px;
+  margin-bottom:12px;
 }
 
-/* ================= BUTTON ================= */
+/* BUTTON */
 .place-order{
   width:100%;
   padding:14px;
@@ -121,18 +116,12 @@ input{
   cursor:not-allowed;
 }
 
-/* ================= SUMMARY ================= */
+/* SUMMARY */
 .summary-item{
   display:flex;
   justify-content:space-between;
-  gap:12px;
   margin-bottom:10px;
   font-size:14px;
-  opacity:.9;
-}
-
-.summary-item span:last-child{
-  white-space:nowrap;
 }
 
 .summary-total{
@@ -145,59 +134,16 @@ input{
   color:var(--success);
 }
 
-/* ================= NOTICE ================= */
+/* NOTICE */
 .notice{
   font-size:13px;
   color:var(--warning);
   margin-top:10px;
 }
 
-/* ================= TABLET ================= */
+/* RESPONSIVE */
 @media(max-width:1024px){
-  .container{
-    grid-template-columns:1fr;
-  }
-}
-
-/* ================= MOBILE ================= */
-@media(max-width:600px){
-  header{
-    padding:12px 16px;
-  }
-
-  .container{
-    padding:16px;
-    gap:18px;
-  }
-
-  .card{
-    padding:18px;
-    border-radius:18px;
-  }
-
-  input{
-    padding:11px 13px;
-  }
-
-  .summary-item{
-    font-size:13px;
-  }
-}
-
-/* ================= SMALL MOBILE ================= */
-@media(max-width:360px){
-  header h2{
-    font-size:14px;
-  }
-
-  .card h3{
-    font-size:15px;
-  }
-
-  .place-order{
-    padding:12px;
-    font-size:14px;
-  }
+  .container{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -210,6 +156,7 @@ input{
 
 <div class="container">
 
+  <!-- CUSTOMER -->
   <div class="card">
     <h3>Customer Details</h3>
 
@@ -231,6 +178,7 @@ input{
     </button>
   </div>
 
+  <!-- SUMMARY -->
   <div class="card">
     <h3>Order Summary</h3>
     <div id="summary"></div>
@@ -238,6 +186,119 @@ input{
 
 </div>
 
-<!-- SCRIPT UNCHANGED -->
+<script src="../config.js"></script>
+<script>
+"use strict";
+
+/* ================= CONFIG ================= */
+const BASE_URL = window.APP_CONFIG.API_BASE;
+const API_ORDERS = BASE_URL + "/api/orders";
+const API_PROFILE = BASE_URL + "/api/users";
+
+/* ================= AUTH ================= */
+const USER_ID = localStorage.getItem("user_id");
+if (!USER_ID) {
+  alert("Please login to continue");
+  location.href = "../index.html";
+}
+
+/* ================= CART ================= */
+const CART_KEY = "cart";
+const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+
+/* ================= ELEMENTS ================= */
+const nameInput = document.getElementById("name");
+const phoneInput = document.getElementById("phone");
+const addressList = document.getElementById("addressList");
+const summaryBox = document.getElementById("summary");
+const orderBtn = document.getElementById("orderBtn");
+const notice = document.getElementById("notice");
+
+/* ================= LOAD USER ================= */
+fetch(`${API_PROFILE}/${USER_ID}`, {
+  headers: { "x-user-id": USER_ID }
+})
+.then(res => res.json())
+.then(user => {
+  nameInput.value = user.name || "";
+  phoneInput.value = user.phone || "";
+
+  addressList.innerHTML = `
+    <div class="address-card">
+      📍 ${user.address || "No address found"}
+    </div>
+  `;
+
+  if (!user.address || cart.length === 0) {
+    notice.hidden = false;
+    orderBtn.disabled = true;
+  }
+})
+.catch(() => {
+  alert("Failed to load user data");
+});
+
+/* ================= ORDER SUMMARY ================= */
+let total = 0;
+summaryBox.innerHTML = "";
+
+cart.forEach(item => {
+  const itemTotal = item.price * item.qty;
+  total += itemTotal;
+
+  summaryBox.innerHTML += `
+    <div class="summary-item">
+      <span>${item.name} × ${item.qty}</span>
+      <span>₹${itemTotal}</span>
+    </div>
+  `;
+});
+
+summaryBox.innerHTML += `
+  <div class="summary-total">
+    <span>Total</span>
+    <span>₹${total}</span>
+  </div>
+`;
+
+/* ================= PLACE ORDER ================= */
+orderBtn.onclick = () => {
+  orderBtn.disabled = true;
+  orderBtn.textContent = "Placing Order...";
+
+  const orderData = {
+    user_id: USER_ID,
+    items: cart.map(i => ({
+      product_id: i.id,
+      name: i.name,
+      price: i.price,
+      qty: i.qty
+    })),
+    total,
+    payment_method: "COD",
+    status: "PLACED"
+  };
+
+  fetch(API_ORDERS, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": USER_ID
+    },
+    body: JSON.stringify(orderData)
+  })
+  .then(res => res.json())
+  .then(() => {
+    localStorage.removeItem(CART_KEY);
+    location.href = "success.html";
+  })
+  .catch(() => {
+    alert("Order failed. Try again.");
+    orderBtn.disabled = false;
+    orderBtn.textContent = "Place Order";
+  });
+};
+</script>
+
 </body>
 </html>

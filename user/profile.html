@@ -226,38 +226,63 @@ button{
 </div>
 </div>
 
+<script src="../config.js"></script>
 <script>
-  // If user is logged out, create new user
-if(!localStorage.getItem("userId")){
-  // New user will be created automatically
-  console.log("New user session");
+"use strict";
+
+/* ================= CONFIG ================= */
+const BASE_URL = window.APP_CONFIG.API_BASE;
+const API_USERS = BASE_URL + "/api/users";
+
+/* ================= ELEMENTS ================= */
+const nameI = document.getElementById("name");
+const phoneI = document.getElementById("phone");
+const altPhoneI = document.getElementById("altPhone");
+const addressI = document.getElementById("address");
+const img = document.getElementById("profileImg");
+const avatar = document.getElementById("avatar");
+
+/* ================= AUTH ================= */
+const USER_ID = localStorage.getItem("user_id");
+if (!USER_ID) {
+  location.href = "../index.html";
 }
 
+/* ================= LOAD PROFILE ================= */
+fetch(`${API_USERS}/${USER_ID}`, {
+  headers: { "x-user-id": USER_ID }
+})
+.then(res => res.json())
+.then(user => {
+  nameI.value = user.name || "";
+  phoneI.value = user.phone || "";
+  altPhoneI.value = user.alt_phone || "";
+  addressI.value = user.address || "";
+
+  if (user.image) {
+    img.src = BASE_URL + user.image;
+    img.hidden = false;
+    avatar.hidden = true;
+  } else {
+    img.hidden = true;
+    avatar.hidden = false;
+  }
+})
+.catch(() => {
+  alert("Failed to load profile");
+});
+
+/* ================= LOGOUT ================= */
 function logout(){
-  // Clear ALL user session data
-  localStorage.removeItem("userId");
+  // clear ONLY session data
+  localStorage.removeItem("user_id");
   localStorage.removeItem("profileImagePreview");
 
-  // Optional: clear cart later if you store it
+  // optional
   // localStorage.removeItem("cart");
-  function clearProfileUI(){
-  nameI.value = "";
-  phoneI.value = "";
-  altPhoneI.value = "";
-  addressI.value = "";
 
-  img.hidden = true;
-  avatar.hidden = false;
-
-  localStorage.removeItem("profileImagePreview");
-}
-if(!localStorage.getItem("userId")){
-  clearProfileUI();
-}
-
-
-  // Redirect to home
-  window.location.href = "../index.html";
+  // redirect
+  location.href = "../index.html";
 }
 </script>
 

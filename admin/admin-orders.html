@@ -131,108 +131,143 @@ header {
   <button onclick="setFilter('CANCELLED',this)">Cancelled</button>
 </div>
 
-<div class="container" id="orders"></div>
+<div class="container" id="orders">Loading...</div>
 
+<script src="../config.js"></script>
 <script>
-// ================= STATIC ORDER DATA =================
-let allOrders = [
-  {
-    id: 101,
-    customer: "Nithin",
-    total: 4999,
-    status: "PLACED",
-    items: [
-      { name: "Headphones", quantity: 1, price: 1999 },
-      { name: "Smart Watch", quantity: 1, price: 3000 }
-    ]
-  },
-  {
-    id: 102,
-    customer: "Guest",
-    total: 1999,
-    status: "SHIPPED",
-    items: [
-      { name: "Bluetooth Speaker", quantity: 1, price: 1999 }
-    ]
-  },
-  {
-    id: 103,
-    customer: "Kumar",
-    total: 999,
-    status: "DELIVERED",
-    items: [
-      { name: "USB Cable", quantity: 2, price: 499 }
-    ]
-  },
-  {
-    id: 104,
-    customer: "Arun",
-    total: 1500,
-    status: "CANCELLED",
-    items: [
-      { name: "Power Bank", quantity: 1, price: 1500 }
-    ]
-  }
-];
+"use strict";
 
+/* ================= SECURITY ================= */
+const ADMIN_KEY = localStorage.getItem("jd_admin");
+if (!ADMIN_KEY) {
+  alert("Admin not logged in");
+  location.href = "../index.html";
+}
+
+/* ================= CONFIG ================= */
+const API = window.APP_CONFIG.API_BASE;
+
+/* ================= STATE ================= */
+let allOrders = [];
 let currentFilter = "ALL";
 
-// ================= FILTER =================
+/* ================= FETCH ORDERS ================= */
+async function loadOrders(){
+  try {
+    const res = await fetch(API + "/api/orders/admin", {
+      headers: { "x-api-key": ADMIN_KEY }
+    });
+
+    if (!res.ok) throw new Error("Failed to load orders");
+
+    allOrders = await res.json();
+    renderOrders();
+
+  } catch (err) {
+    document.getElementById("orders").innerHTML =
+      "<p style='color:red'>Error loading orders</p>";
+  }
+}
+
+/* ================= FILTER ================= */
 function setFilter(status, btn){
   currentFilter = status;
-
   document.querySelectorAll(".filters button")
     .forEach(b => b.classList.remove("active"));
-
   btn.classList.add("active");
   renderOrders();
 }
 
-// ================= RENDER =================
+/* ================= UPDATE STATUS ================= */
+async function updateStatus(id, status){
+  try{
+    await fetch(`${API}/api/orders/${id}/status`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ADMIN_KEY
+      },
+      body: JSON.stringify({ status })
+    });
+    loadOrders();
+  }catch{
+    alert("Failed to update order status");
+  }
+}
+
+/* ================= DELETE ORDER ================= */
+async function deleteOrder(id){
+  if(!confirm("Delete this order?")) return;
+
+  try{
+    await fetch(`${API}/api/orders/${id}`, {
+      method: "DELETE",
+      headers: { "x-api-key": ADMIN_KEY }
+    });
+    loadOrders();
+  }catch{
+    alert("Failed to delete order");
+  }
+}
+
+/* ================= RENDER ================= */
 function renderOrders(){
   const div = document.getElementById("orders");
   div.innerHTML = "";
 
-  const list =
-    currentFilter === "ALL"
-      ? allOrders
-      : allOrders.filter(o => o.status === currentFilter);
+  const list = currentFilter === "ALL"
+    ? allOrders
+    : allOrders.filter(o => o.status === currentFilter);
 
-  if(!list.length){
+  if (!list.length) {
     div.innerHTML = "<p>No orders found</p>";
     return;
   }
 
-  list.forEach(o=>{
+  list.forEach(o => {
     div.innerHTML += `
       <div class="order">
         <b>Order #${o.id}</b><br>
-        Customer: ${o.customer}<br>
-        <b>Total: ₹${o.total.toLocaleString("en-IN")}</b>
+        <b>User:</b> ${o.user_id}<br>
+        <b>Total:</b> ₹${Number(o.total).toLocaleString("en-IN")}
 
-        <div class="status ${o.status}">
+        <div class="status ${o.status.toLowerCase()}">
           Status: ${o.status}
         </div>
 
         <div class="items">
           ${o.items.map(i =>
-            `${i.name} × ${i.quantity} (₹${i.price})`
+            `${i.name} × ${i.qty} (₹${i.price})`
           ).join("<br>")}
         </div>
 
         <div class="actions">
-          <button class="ship">Ship</button>
-          <button class="deliver">Deliver</button>
-          <button class="cancel">Cancel</button>
-          <button class="delete">Delete</button>
+          <button onclick="updateStatus(${o.id},'SHIPPED')"
+            ${o.status !== "PLACED" ? "disabled" : ""}>
+            Ship
+          </button>
+
+          <button onclick="updateStatus(${o.id},'DELIVERED')"
+            ${o.status !== "SHIPPED" ? "disabled" : ""}>
+            Deliver
+          </button>
+
+          <button onclick="updateStatus(${o.id},'CANCELLED')"
+            ${o.status === "DELIVERED" ? "disabled" : ""}>
+            Cancel
+          </button>
+
+          <button onclick="deleteOrder(${o.id})">
+            Delete
+          </button>
         </div>
       </div>
     `;
   });
 }
 
-// ================= INIT =================
-renderOrders();
+/* ================= INIT ================= */
+loadOrders();
 </script>
 
 </body>
