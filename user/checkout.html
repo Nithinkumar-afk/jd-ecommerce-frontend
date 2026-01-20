@@ -111,11 +111,6 @@ input{
   margin-top:12px;
 }
 
-.place-order:disabled{
-  background:#555;
-  cursor:not-allowed;
-}
-
 /* SUMMARY */
 .summary-item{
   display:flex;
@@ -132,13 +127,6 @@ input{
   border-top:1px dashed var(--border);
   font-weight:600;
   color:var(--success);
-}
-
-/* NOTICE */
-.notice{
-  font-size:13px;
-  color:var(--warning);
-  margin-top:10px;
 }
 
 /* RESPONSIVE */
@@ -169,11 +157,7 @@ input{
     <h3>Address</h3>
     <div id="addressList"></div>
 
-    <div class="notice" id="notice" hidden>
-      Complete your profile to place order
-    </div>
-
-    <button class="place-order" id="orderBtn" disabled>
+    <button class="place-order" id="orderBtn">
       Place Order
     </button>
   </div>
@@ -215,21 +199,15 @@ const phoneInput = document.getElementById("phone");
 const addressList = document.getElementById("addressList");
 const summaryBox = document.getElementById("summary");
 const orderBtn = document.getElementById("orderBtn");
-const notice = document.getElementById("notice");
 
-/* ================= SAFETY CHECK ================= */
-if (!summaryBox || !orderBtn) {
-  console.error("Checkout DOM elements missing");
-}
-
-/* ================= EMPTY CART CHECK ================= */
+/* ================= EMPTY CART ================= */
 if (cart.length === 0) {
   alert("Your cart is empty");
   location.href = "cart.html";
 }
 
 /* ================= LOAD USER ================= */
-fetch(`${API_PROFILE}/${USER_ID}`, {
+fetch(API_PROFILE, {
   headers: { "x-user-id": USER_ID }
 })
 .then(res => res.json())
@@ -239,17 +217,9 @@ fetch(`${API_PROFILE}/${USER_ID}`, {
 
   addressList.innerHTML = `
     <div class="address-card">
-      📍 ${user.address || "No address found"}
+      📍 ${user.address || "Address not provided"}
     </div>
   `;
-
-  if (!user.address) {
-    notice.hidden = false;
-    orderBtn.disabled = true;
-  } else {
-    notice.hidden = true;
-    orderBtn.disabled = false;
-  }
 })
 .catch(err => {
   console.error(err);
@@ -281,12 +251,6 @@ summaryBox.insertAdjacentHTML("beforeend", `
 
 /* ================= PLACE ORDER ================= */
 orderBtn.addEventListener("click", () => {
-
-  if (localStorage.getItem("profile_completed") !== "true") {
-    alert("Please complete your profile before placing an order");
-    location.href = "../user/profile.html";
-    return;
-  }
 
   orderBtn.disabled = true;
   orderBtn.textContent = "Placing Order...";
