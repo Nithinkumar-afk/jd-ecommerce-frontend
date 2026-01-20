@@ -176,13 +176,6 @@ document.querySelectorAll(".nav-link").forEach(link=>{
   });
 });
 
-/* ================= SECURITY ================= */
-const ADMIN_KEY = localStorage.getItem("jd_admin");
-if (!ADMIN_KEY) {
-  alert("Admin not logged in");
-  location.href = "../index.html";
-}
-
 /* ================= CONFIG ================= */
 const API = window.APP_CONFIG.API_BASE;
 
@@ -193,10 +186,7 @@ let currentFilter = "ALL";
 /* ================= FETCH ORDERS ================= */
 async function loadOrders(){
   try {
-    const res = await fetch(API + "/api/orders/admin", {
-      headers: { "x-api-key": ADMIN_KEY }
-    });
-
+    const res = await fetch(API + "/api/orders/admin");
     if (!res.ok) throw new Error();
 
     allOrders = await res.json();
@@ -222,10 +212,7 @@ async function updateStatus(id, status){
   try{
     await fetch(`${API}/api/orders/${id}/status`, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ADMIN_KEY
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
     });
     loadOrders();
@@ -240,8 +227,7 @@ async function deleteOrder(id){
 
   try{
     await fetch(`${API}/api/orders/${id}`, {
-      method: "DELETE",
-      headers: { "x-api-key": ADMIN_KEY }
+      method: "DELETE"
     });
     loadOrders();
   }catch{

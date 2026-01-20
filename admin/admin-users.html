@@ -155,28 +155,21 @@ header a{
   <div id="usersList">Loading users...</div>
 </div>
 
+<!-- ✅ CONFIG -->
+<script src="../config.js"></script>
+
 <script>
 "use strict";
 
-/* ================= AUTH ================= */
-const ADMIN_KEY = localStorage.getItem("jd_admin");
-if (!ADMIN_KEY) {
-  alert("Unauthorized access");
-  location.href = "../index.html";
-}
-
 /* ================= CONFIG ================= */
-const API_BASE = window.APP_CONFIG.API_BASE; // ✅ GLOBAL CONFIG
+const API_BASE = window.APP_CONFIG.API_BASE;
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
 /* ================= LOAD USERS ================= */
 async function loadUsers() {
   try {
-    const res = await fetch(API_BASE + "/api/users", {
-      headers: { "x-api-key": ADMIN_KEY }
-    });
-
+    const res = await fetch(API_BASE + "/api/users");
     if (!res.ok) throw new Error();
 
     const users = await res.json();

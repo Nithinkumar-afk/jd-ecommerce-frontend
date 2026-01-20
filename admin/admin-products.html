@@ -6,27 +6,138 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- GLOBAL CONFIG -->
 <script src="../config.js"></script>
 
 <style>
-/* ✅ SAME CSS – unchanged */
 :root{
-  --bg:#000;--card:#0b0b0b;--border:#222;
-  --text:#e5e7eb;--muted:#9ca3af;
-  --accent:#22c55e;--danger:#ef4444;--primary:#2563eb;
+  --bg:#000;
+  --card:#0b0b0b;
+  --border:#222;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --accent:#22c55e;
+  --danger:#ef4444;
+  --primary:#2563eb;
 }
+
 *{box-sizing:border-box}
-body{margin:0;font-family:Poppins;background:var(--bg);color:var(--text);opacity:0;transition:.3s}
+
+body{
+  margin:0;
+  font-family:Poppins,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  opacity:0;
+  transition:opacity .35s ease;
+}
+
 body.loaded{opacity:1}
-header{padding:16px 22px;display:flex;justify-content:space-between;align-items:center;background:#0b0b0b;border-bottom:1px solid var(--border)}
-header button{padding:10px 16px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-weight:600;cursor:pointer}
-.form{margin:20px auto;padding:20px;display:grid;gap:12px;background:var(--card);border-radius:18px;border:1px solid var(--border);max-width:1100px}
-input,textarea{padding:12px;border-radius:12px;border:1px solid var(--border);background:#000;color:#fff}
-.form button{padding:14px;border:none;border-radius:14px;background:var(--accent);font-weight:600;cursor:pointer}
-.products{padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;max-width:1300px;margin:auto}
-.card{background:var(--card);border-radius:18px;padding:14px;border:1px solid var(--border);display:flex;flex-direction:column}
-.card img{width:100%;height:160px;object-fit:cover;border-radius:14px}
-.card button{margin-top:auto;background:var(--danger);color:#fff;border:none;padding:10px;border-radius:12px;cursor:pointer}
+
+/* HEADER */
+header{
+  padding:16px 22px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#0b0b0b;
+  border-bottom:1px solid var(--border);
+  gap:14px;
+}
+
+header h2{margin:0;font-size:18px;font-weight:600}
+
+header div{display:flex;gap:10px}
+
+header button{
+  padding:10px 16px;
+  border-radius:12px;
+  border:none;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+}
+
+/* FORM */
+.form{
+  margin:20px auto;
+  padding:20px;
+  display:grid;
+  gap:12px;
+  background:var(--card);
+  border-radius:18px;
+  border:1px solid var(--border);
+  max-width:1100px;
+}
+
+input,textarea{
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#000;
+  color:#fff;
+  font-family:Poppins;
+}
+
+textarea{resize:vertical}
+
+.form button{
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  background:var(--accent);
+  color:#000;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.form button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+/* PRODUCTS */
+.products{
+  padding:20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:20px;
+  max-width:1300px;
+  margin:auto;
+}
+
+.card{
+  background:var(--card);
+  border-radius:18px;
+  padding:14px;
+  border:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+}
+
+.card img{
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  border-radius:14px;
+  background:#111;
+}
+
+.card small{color:var(--muted);margin-top:8px}
+.card strong{margin-top:6px}
+.card p{margin:6px 0 10px}
+
+.card button{
+  margin-top:auto;
+  background:var(--danger);
+  color:#fff;
+  border:none;
+  padding:10px;
+  border-radius:12px;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -35,113 +146,148 @@ input,textarea{padding:12px;border-radius:12px;border:1px solid var(--border);ba
 <header>
   <h2>JD Admin – Product Management</h2>
   <div>
-    <button onclick="nav('admin-dashboard.html')">Dashboard</button>
-    <button onclick="nav('../index.html')">Store</button>
+    <button class="nav" data-href="admin-dashboard.html">Dashboard</button>
+    <button class="nav" data-href="../index.html">Store</button>
   </div>
 </header>
 
+<!-- ADD PRODUCT -->
 <div class="form">
   <input id="name" placeholder="Product name *">
   <input id="price" type="number" placeholder="Price *">
   <input id="image" type="file" accept="image/*">
-  <textarea id="desc" rows="3" placeholder="Description"></textarea>
+  <textarea id="desc" rows="3" placeholder="Description (optional)"></textarea>
   <button id="addBtn">Add Product</button>
 </div>
 
+<!-- PRODUCT LIST -->
 <div class="products" id="list">Loading products...</div>
 
 <script>
 "use strict";
 
-window.onload=()=>document.body.classList.add("loaded");
+/* PAGE LOAD */
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+});
+
+/* NAV */
+document.querySelectorAll(".nav").forEach(btn=>{
+  btn.onclick = ()=>{
+    document.body.style.opacity = 0;
+    setTimeout(()=>location.href = btn.dataset.href,200);
+  };
+});
+
+/* CONFIG */
 const BASE = window.APP_CONFIG.API_BASE;
 const API  = BASE + "/api/products";
-const ADMIN_KEY = localStorage.getItem("jd_admin");
 const FALLBACK = "https://via.placeholder.com/400x250?text=No+Image";
 
-if(!ADMIN_KEY){
-  alert("Admin access missing");
-  location.href="../index.html";
-}
-
+/* ELEMENTS */
 const list = document.getElementById("list");
-const addBtn = document.getElementById("addBtn");
+const nameEl = document.getElementById("name");
+const priceEl = document.getElementById("price");
+const imageEl = document.getElementById("image");
+const descEl  = document.getElementById("desc");
+const addBtn  = document.getElementById("addBtn");
 
-function nav(href){
-  document.body.style.opacity=0;
-  setTimeout(()=>location.href=href,200);
-}
-
-/* LOAD */
+/* LOAD PRODUCTS */
 async function loadProducts(){
+  list.textContent = "Loading products...";
   try{
-    const res = await fetch(API);
+    const res = await fetch(API + "?t=" + Date.now());
+    if(!res.ok) throw new Error();
+
     const data = await res.json();
     list.innerHTML = "";
 
     if(!data.length){
-      list.innerHTML="<p>No products found</p>";
+      list.innerHTML = "<p>No products found</p>";
       return;
     }
 
     data.forEach(p=>{
-      list.innerHTML+=`
+      const img = p.image ? BASE + p.image : FALLBACK;
+      list.insertAdjacentHTML("beforeend",`
         <div class="card">
-          <img src="${BASE + p.image}" onerror="this.src='${FALLBACK}'">
+          <img src="${img}" onerror="this.src='${FALLBACK}'">
+          <small>ID: ${p.id}</small>
           <strong>${p.name}</strong>
-          <p>₹${p.price}</p>
-          <button onclick="del(${p.id})">Delete</button>
-        </div>`;
+          <p>₹${Number(p.price).toFixed(2)}</p>
+          <button onclick="deleteProduct(${p.id})">Delete</button>
+        </div>
+      `);
     });
-  }catch{
-    list.innerHTML="<p style='color:red'>Failed to load</p>";
+
+  }catch(err){
+    console.error(err);
+    list.innerHTML = "<p style='color:#ef4444'>Failed to load products</p>";
   }
 }
 
-/* ADD */
+/* ADD PRODUCT */
 addBtn.onclick = async ()=>{
-  const name=nameEl.value.trim();
-  const price=priceEl.value;
-  if(!name||!price) return alert("Required fields");
+  if(!nameEl.value || !priceEl.value){
+    alert("Name and price required");
+    return;
+  }
 
-  const fd = new FormData();
-  fd.append("name",name);
-  fd.append("price",price);
-  fd.append("description",descEl.value);
-  if(imageEl.files[0]) fd.append("image",imageEl.files[0]);
+  addBtn.disabled = true;
+  addBtn.textContent = "Adding...";
 
-  addBtn.disabled=true;
-  addBtn.textContent="Adding...";
+  const form = new FormData();
+  form.append("name", nameEl.value.trim());
+  form.append("price", priceEl.value);
+  form.append("description", descEl.value.trim());
+  if(imageEl.files[0]) form.append("image", imageEl.files[0]);
 
   try{
     const res = await fetch(API,{
       method:"POST",
-      headers:{ "x-api-key": ADMIN_KEY },
-      body:fd
+      body: form
+    });
+
+    if(!res.ok) throw new Error();
+
+    nameEl.value="";
+    priceEl.value="";
+    descEl.value="";
+    imageEl.value="";
+
+    await loadProducts();
+    alert("Product added successfully ✅");
+
+  }catch(err){
+    console.error(err);
+    alert("Failed to add product");
+  }finally{
+    addBtn.disabled = false;
+    addBtn.textContent = "Add Product";
+  }
+};
+
+/* DELETE PRODUCT */
+async function deleteProduct(id){
+  if(!confirm("Delete this product?")) return;
+
+  try{
+    const res = await fetch(`${API}/${id}`,{
+      method:"DELETE"
     });
 
     if(!res.ok) throw new Error();
     loadProducts();
-    alert("Product added ✅");
-  }catch{
-    alert("Failed to add product ❌");
-  }finally{
-    addBtn.disabled=false;
-    addBtn.textContent="Add Product";
-  }
-};
 
-/* DELETE */
-async function del(id){
-  if(!confirm("Delete?")) return;
-  await fetch(API+"/"+id,{
-    method:"DELETE",
-    headers:{ "x-api-key": ADMIN_KEY }
-  });
-  loadProducts();
+  }catch(err){
+    console.error(err);
+    alert("Failed to delete product");
+  }
 }
 
+/* INIT */
 loadProducts();
 </script>
+
 </body>
 </html>
