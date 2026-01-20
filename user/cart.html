@@ -235,27 +235,20 @@ function renderCart() {
 
 /* ================= EVENTS ================= */
 function bindEvents() {
-  // Quantity buttons
   document.querySelectorAll(".qty-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      const i = Number(btn.dataset.index);
-      const d = Number(btn.dataset.change);
-      changeQty(i, d);
+      changeQty(+btn.dataset.index, +btn.dataset.change);
     });
   });
 
-  // Remove buttons
   document.querySelectorAll(".remove-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      removeItem(Number(btn.dataset.index));
+      removeItem(+btn.dataset.index);
     });
   });
 
-  // Checkout button
   const checkoutBtn = document.getElementById("checkoutBtn");
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener("click", goCheckout);
-  }
+  if (checkoutBtn) checkoutBtn.addEventListener("click", goCheckout);
 }
 
 /* ================= ACTIONS ================= */
@@ -277,28 +270,17 @@ function save() {
 
 /* ================= CHECKOUT ================= */
 function goCheckout() {
-  console.log("Checkout clicked");
-
   if (cart.length === 0) {
     alert("Your cart is empty");
     return;
   }
 
-  if (localStorage.getItem("profile_completed") !== "true") {
-    alert("Please complete your profile before checkout");
-    location.href = "../profile.html";
-    return;
-  }
-
-  // ✅ CORRECT PATH FOR GITHUB PAGES
   location.href = "../checkout.html";
 }
 
 /* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", renderCart);
 </script>
-
-
 
 </body>
 </html>
