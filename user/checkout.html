@@ -178,11 +178,13 @@ document.addEventListener("DOMContentLoaded", () => {
     window.APP_CONFIG?.API_BASE ||
     "https://jd-backend-production.up.railway.app";
 
-  const API_ORDERS = BASE_URL + "/api/orders";
-  const API_USERS  = BASE_URL + "/api/users";
+  // ✅ CORRECT ENDPOINTS
+  const API_PROFILE = BASE_URL + "/api/profile";
+  const API_ORDERS  = BASE_URL + "/api/orders";
 
   /* ================= AUTH ================= */
   const USER_ID = localStorage.getItem("jd_user_id");
+
   if (!USER_ID) {
     alert("Please login to continue");
     location.href = "../index.html";
@@ -200,30 +202,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ================= ELEMENTS ================= */
-  const nameInput = document.getElementById("name");
-  const phoneInput = document.getElementById("phone");
+  const nameInput   = document.getElementById("name");
+  const phoneInput  = document.getElementById("phone");
   const addressList = document.getElementById("addressList");
-  const summaryBox = document.getElementById("summary");
-  const orderBtn = document.getElementById("orderBtn");
+  const summaryBox  = document.getElementById("summary");
+  const orderBtn    = document.getElementById("orderBtn");
 
-  /* ================= LOAD USER ================= */
-  fetch(API_USERS, {
-    headers: { "x-user-id": USER_ID }
+  /* ================= LOAD USER PROFILE ================= */
+  fetch(API_PROFILE, {
+    headers: {
+      "x-user-id": USER_ID
+    }
   })
   .then(res => {
-    if (!res.ok) throw new Error("User fetch failed");
+    if (!res.ok) throw new Error("Profile fetch failed");
     return res.json();
   })
   .then(user => {
-    nameInput.value = user.name || "";
+    nameInput.value  = user.name || "";
     phoneInput.value = user.phone || "";
+
     addressList.innerHTML = `
       <div class="address-card">
         📍 ${user.address || "Address not provided"}
       </div>
     `;
   })
-  .catch(() => {
+  .catch(err => {
+    console.error(err);
     alert("Failed to load user data");
   });
 
@@ -257,10 +263,10 @@ document.addEventListener("DOMContentLoaded", () => {
     orderBtn.textContent = "Placing Order...";
 
     const orderData = {
-      items: cart.map(i => ({
-        name: i.name,
-        price: i.price,
-        quantity: i.qty
+      items: cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.qty
       })),
       total
     };
@@ -281,7 +287,8 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
     })
-    .catch(() => {
+    .catch(err => {
+      console.error(err);
       alert("Order failed. Try again.");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
@@ -290,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
+
 
 </body>
 </html>
