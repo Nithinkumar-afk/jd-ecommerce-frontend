@@ -84,17 +84,6 @@ header div{
   object-fit:cover;
 }
 
-.btn{
-  margin-top:10px;
-  padding:8px 14px;
-  border-radius:12px;
-  background:#334155;
-  color:white;
-  border:none;
-  cursor:pointer;
-  font-size:13px;
-}
-
 /* ================= FORM ================= */
 label{
   font-size:13px;
@@ -157,15 +146,9 @@ button{
 <div class="card">
 
 <div class="profile-top">
-  <div>
-    <div class="profile-pic" id="picBox">
-      <span id="avatar">👤</span>
-      <img id="profileImage" hidden>
-    </div>
-
-    <!-- ✅ Added -->
-    <input type="file" id="imageInput" accept="image/*" hidden>
-    <button class="btn" id="changePhoto">Change Photo</button>
+  <div class="profile-pic">
+    <span id="avatar">👤</span>
+    <img id="profileImage" hidden>
   </div>
 
   <div style="flex:1;width:100%">
@@ -183,54 +166,94 @@ button{
 <label>Address</label>
 <textarea id="address"></textarea>
 
+<!-- ✅ ADDED IMAGE INPUT -->
+<label>Profile Image</label>
+<input type="file" id="imageInput" accept="image/*">
+
 <button id="saveBtn">Save Profile</button>
 
 </div>
 </div>
 
+<script src="../config.js"></script>
 <script>
+"use strict";
+
 /* ================= CONFIG ================= */
-// change these if needed
-const BASE_URL = "http://localhost:5000";
-const API_USERS = BASE_URL + "/users";
-const USER_ID = localStorage.getItem("userId");
+const BASE_URL =
+  window.APP_CONFIG?.API_BASE ||
+  "https://jd-backend-production.up.railway.app";
+
+const API_PROFILE = BASE_URL + "/api/profile";
 
 /* ================= ELEMENTS ================= */
-const imageInput = document.getElementById("imageInput");
-const changePhoto = document.getElementById("changePhoto");
-const picBox = document.getElementById("picBox");
+const nameI = document.getElementById("name");
+const phoneI = document.getElementById("phone");
+const altPhoneI = document.getElementById("altPhone");
+const addressI = document.getElementById("address");
+const imageI = document.getElementById("imageInput");
 const img = document.getElementById("profileImage");
 const avatar = document.getElementById("avatar");
+const saveBtn = document.getElementById("saveBtn");
 
-/* ================= EVENTS ================= */
-changePhoto.onclick = () => imageInput.click();
-picBox.onclick = () => imageInput.click();
+/* ================= USER ================= */
+const USER_ID = localStorage.getItem("jd_user_id");
+if (!USER_ID) {
+  alert("Please login first");
+  location.href = "../index.html";
+}
 
-imageInput.onchange = () => {
-  const file = imageInput.files[0];
-  if (!file) return;
+/* ================= LOAD PROFILE ================= */
+fetch(API_PROFILE, {
+  headers: { "x-user-id": USER_ID }
+})
+.then(res => res.json())
+.then(user => {
+  nameI.value = user.name || "";
+  phoneI.value = user.phone || "";
+  altPhoneI.value = user.alt_phone || "";
+  addressI.value = user.address || "";
+
+  if (user.image) {
+    img.src = BASE_URL + user.image;
+    img.hidden = false;
+    avatar.hidden = true;
+  }
+});
+
+/* ================= SAVE PROFILE ================= */
+saveBtn.onclick = () => {
+
+  if (!nameI.value || !phoneI.value || !addressI.value) {
+    alert("Please fill all required fields");
+    return;
+  }
 
   const formData = new FormData();
-  formData.append("image", file);
+  formData.append("name", nameI.value);
+  formData.append("phone", phoneI.value);
+  formData.append("altPhone", altPhoneI.value);
+  formData.append("address", addressI.value);
 
-  fetch(`${API_USERS}/image`, {
+  if (imageI.files.length > 0) {
+    formData.append("image", imageI.files[0]);
+  }
+
+  fetch(API_PROFILE, {
     method: "POST",
-    headers: {
-      "x-user-id": USER_ID
-    },
+    headers: { "x-user-id": USER_ID },
     body: formData
   })
   .then(res => res.json())
-  .then(data => {
-    img.src = BASE_URL + data.image;
-    img.hidden = false;
-    avatar.hidden = true;
-    alert("Profile image updated ✅");
+  .then(() => {
+    alert("Profile saved successfully ✅");
+    location.reload();
   })
-  .catch(() => alert("Image upload failed ❌"));
+  .catch(() => alert("Failed to save profile"));
 };
 
-function logout(){
+/* ================= LOGOUT ================= */
+function logout() {
   localStorage.clear();
   location.href = "../index.html";
 }
