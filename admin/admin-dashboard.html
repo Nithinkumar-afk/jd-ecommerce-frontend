@@ -26,10 +26,9 @@ body{
   transition:opacity .35s ease;
 }
 
-/* PAGE FADE IN */
 body.loaded{opacity:1}
 
-/* ================= HEADER ================= */
+/* HEADER */
 header{
   padding:16px 24px;
   background:var(--glass);
@@ -60,29 +59,21 @@ header{
   font-weight:700;
 }
 
-header h2{
-  font-size:20px;
-  font-weight:600;
-}
+header h2{font-size:20px;font-weight:600}
 
 header a{
   color:#fff;
   text-decoration:none;
   font-size:14px;
   opacity:.9;
-  transition:.2s;
 }
 
-header a:hover{opacity:1}
-
-/* ================= CONTAINER ================= */
 .container{
   max-width:1200px;
   margin:auto;
   padding:28px 22px;
 }
 
-/* ================= STATS ================= */
 .cards{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -108,7 +99,6 @@ header a:hover{opacity:1}
   font-weight:600;
 }
 
-/* ================= LINKS ================= */
 .links{
   margin-top:34px;
   display:grid;
@@ -123,28 +113,14 @@ header a:hover{opacity:1}
   border:1px solid var(--border);
   padding:18px;
   border-radius:18px;
-  transition:.25s;
   display:block;
+  transition:.25s;
 }
 
 .links a:hover{
   border-color:var(--primary);
   background:rgba(77,163,255,.15);
   transform:translateY(-2px);
-}
-
-/* ================= RESPONSIVE ================= */
-@media (max-width:768px){
-  header{padding:14px 16px}
-  .container{padding:22px 16px}
-  header h2{font-size:18px}
-}
-
-@media (max-width:480px){
-  header{flex-direction:column;align-items:flex-start;gap:10px}
-  .logo{width:38px;height:38px;border-radius:12px}
-  header h2{font-size:17px}
-  .card p{font-size:24px}
 }
 </style>
 </head>
@@ -166,17 +142,14 @@ header a:hover{opacity:1}
       <h3>Total Products</h3>
       <p id="totalProducts">–</p>
     </div>
-
     <div class="card">
       <h3>Total Orders</h3>
       <p id="totalOrders">–</p>
     </div>
-
     <div class="card">
       <h3>Total Revenue</h3>
       <p id="totalRevenue">₹0</p>
     </div>
-
     <div class="card">
       <h3>Total Users</h3>
       <p id="totalUsers">–</p>
@@ -196,66 +169,63 @@ header a:hover{opacity:1}
 <script>
 "use strict";
 
-/* ================= PAGE LOAD ================= */
+/* ================= SIMPLE ADMIN AUTH ================= */
+const ADMIN_PASSWORD = "123456"; // 🔑 CHANGE THIS
+let adminKey = localStorage.getItem("jd_admin");
+
+if(!adminKey){
+  const input = prompt("Enter 6-digit Admin Password:");
+  if(input === ADMIN_PASSWORD){
+    localStorage.setItem("jd_admin", ADMIN_PASSWORD);
+    adminKey = ADMIN_PASSWORD;
+  }else{
+    alert("Unauthorized access");
+    location.href = "../index.html";
+  }
+}
+
+/* PAGE FADE IN */
 window.addEventListener("load",()=>{
   document.body.classList.add("loaded");
 });
 
-/* ================= SMOOTH NAVIGATION ================= */
-document.querySelectorAll(".nav-link").forEach(link=>{
-  link.addEventListener("click",e=>{
-    e.preventDefault();
-    const href = link.getAttribute("href");
-    document.body.style.opacity = 0;
-    setTimeout(()=>location.href = href,200);
-  });
-});
-
-/* ================= SECURITY ================= */
-const ADMIN_KEY = localStorage.getItem("jd_admin");
-if (!ADMIN_KEY) {
-  alert("Unauthorized access");
-  location.href = "../index.html";
-}
-
-/* ================= CONFIG ================= */
+/* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
 
 function formatMoney(n){
   return "₹" + Number(n || 0).toLocaleString("en-IN");
 }
 
-/* ================= ELEMENTS ================= */
+/* ELEMENTS */
 const totalProductsEl = document.getElementById("totalProducts");
 const totalUsersEl = document.getElementById("totalUsers");
 const totalOrdersEl = document.getElementById("totalOrders");
 const totalRevenueEl = document.getElementById("totalRevenue");
 
-/* ================= LOAD DASHBOARD ================= */
+/* LOAD DASHBOARD */
 async function loadDashboard(){
   try{
     const products = await (await fetch(API+"/api/products")).json();
-    totalProductsEl.textContent = Array.isArray(products) ? products.length : 0;
+    totalProductsEl.textContent = products.length || 0;
 
     const users = await (await fetch(API+"/api/users",{
-      headers:{ "x-api-key":ADMIN_KEY }
+      headers:{ "x-api-key":adminKey }
     })).json();
-    totalUsersEl.textContent = Array.isArray(users) ? users.length : 0;
+    totalUsersEl.textContent = users.length || 0;
 
     const stats = await (await fetch(API+"/api/orders/admin",{
-      headers:{ "x-api-key":ADMIN_KEY }
+      headers:{ "x-api-key":adminKey }
     })).json();
 
-    totalOrdersEl.textContent = stats.totalOrders ?? 0;
-    totalRevenueEl.textContent = formatMoney(stats.totalRevenue ?? 0);
+    totalOrdersEl.textContent = stats.totalOrders || 0;
+    totalRevenueEl.textContent = formatMoney(stats.totalRevenue);
 
-  }catch(err){
-    console.error(err);
+  }catch(e){
+    console.error(e);
     alert("Failed to load dashboard data");
   }
 }
 
-/* ================= INIT ================= */
 loadDashboard();
 </script>
 
