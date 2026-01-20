@@ -191,7 +191,10 @@ input{
 "use strict";
 
 /* ================= CONFIG ================= */
-const BASE_URL = window.APP_CONFIG.API_BASE;
+const BASE_URL =
+  window.APP_CONFIG?.API_BASE ||
+  "https://jd-backend-production.up.railway.app";
+
 const API_ORDERS = BASE_URL + "/api/orders";
 const API_PROFILE = BASE_URL + "/api/users";
 
@@ -214,6 +217,17 @@ const summaryBox = document.getElementById("summary");
 const orderBtn = document.getElementById("orderBtn");
 const notice = document.getElementById("notice");
 
+/* ================= SAFETY CHECK ================= */
+if (!summaryBox || !orderBtn) {
+  console.error("Checkout DOM elements missing");
+}
+
+/* ================= EMPTY CART CHECK ================= */
+if (cart.length === 0) {
+  alert("Your cart is empty");
+  location.href = "cart.html";
+}
+
 /* ================= LOAD USER ================= */
 fetch(`${API_PROFILE}/${USER_ID}`, {
   headers: { "x-user-id": USER_ID }
@@ -229,14 +243,16 @@ fetch(`${API_PROFILE}/${USER_ID}`, {
     </div>
   `;
 
-  if (!user.address || cart.length === 0) {
+  if (!user.address) {
     notice.hidden = false;
     orderBtn.disabled = true;
   } else {
+    notice.hidden = true;
     orderBtn.disabled = false;
   }
 })
-.catch(() => {
+.catch(err => {
+  console.error(err);
   alert("Failed to load user data");
 });
 
@@ -248,25 +264,24 @@ cart.forEach(item => {
   const itemTotal = item.price * item.qty;
   total += itemTotal;
 
-  summaryBox.innerHTML += `
+  summaryBox.insertAdjacentHTML("beforeend", `
     <div class="summary-item">
       <span>${item.name} × ${item.qty}</span>
       <span>₹${itemTotal}</span>
     </div>
-  `;
+  `);
 });
 
-summaryBox.innerHTML += `
+summaryBox.insertAdjacentHTML("beforeend", `
   <div class="summary-total">
-    <span>Total</span>
-    <span>₹${total}</span>
+    <strong>Total</strong>
+    <strong>₹${total}</strong>
   </div>
-`;
+`);
 
 /* ================= PLACE ORDER ================= */
-orderBtn.onclick = () => {
+orderBtn.addEventListener("click", () => {
 
-  /* 🔒 STRONG FRONTEND RULE */
   if (localStorage.getItem("profile_completed") !== "true") {
     alert("Please complete your profile before placing an order");
     location.href = "../user/profile.html";
@@ -277,16 +292,12 @@ orderBtn.onclick = () => {
   orderBtn.textContent = "Placing Order...";
 
   const orderData = {
-    user_id: USER_ID,
     items: cart.map(i => ({
-      product_id: i.id,
       name: i.name,
       price: i.price,
-      qty: i.qty
+      quantity: i.qty
     })),
-    total,
-    payment_method: "COD",
-    status: "PLACED"
+    total
   };
 
   fetch(API_ORDERS, {
@@ -297,17 +308,21 @@ orderBtn.onclick = () => {
     },
     body: JSON.stringify(orderData)
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("Order failed");
+    return res.json();
+  })
   .then(() => {
     localStorage.removeItem(CART_KEY);
     location.href = "success.html";
   })
-  .catch(() => {
+  .catch(err => {
+    console.error(err);
     alert("Order failed. Try again.");
     orderBtn.disabled = false;
     orderBtn.textContent = "Place Order";
   });
-};
+});
 </script>
 
 </body>

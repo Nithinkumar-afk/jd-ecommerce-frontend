@@ -201,19 +201,20 @@ function renderCart() {
 
     cartBox.insertAdjacentHTML("beforeend", `
       <div class="cart-item">
-        <img src="${item.image ? API + item.image : FALLBACK}">
+        <img src="${item.image ? API + item.image : FALLBACK}" alt="${item.name}">
+        
         <div class="item-info">
           <h4>${item.name}</h4>
           <p>₹${item.price}</p>
 
           <div class="qty-controls">
-            <button data-i="${i}" data-d="-1">−</button>
+            <button class="qty-btn" data-index="${i}" data-change="-1">−</button>
             <span>${item.qty}</span>
-            <button data-i="${i}" data-d="1">+</button>
+            <button class="qty-btn" data-index="${i}" data-change="1">+</button>
           </div>
         </div>
 
-        <button class="btn btn-danger" data-remove="${i}">
+        <button class="btn btn-danger remove-btn" data-index="${i}">
           Remove
         </button>
       </div>
@@ -234,22 +235,26 @@ function renderCart() {
 
 /* ================= EVENTS ================= */
 function bindEvents() {
-  // Qty buttons
-  document.querySelectorAll(".qty-controls button").forEach(btn => {
-    btn.onclick = () => {
-      changeQty(+btn.dataset.i, +btn.dataset.d);
-    };
+  // Quantity buttons
+  document.querySelectorAll(".qty-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.index);
+      const d = Number(btn.dataset.change);
+      changeQty(i, d);
+    });
   });
 
   // Remove buttons
-  document.querySelectorAll("[data-remove]").forEach(btn => {
-    btn.onclick = () => removeItem(+btn.dataset.remove);
+  document.querySelectorAll(".remove-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      removeItem(Number(btn.dataset.index));
+    });
   });
 
   // Checkout button
   const checkoutBtn = document.getElementById("checkoutBtn");
   if (checkoutBtn) {
-    checkoutBtn.onclick = goCheckout;
+    checkoutBtn.addEventListener("click", goCheckout);
   }
 }
 
@@ -281,16 +286,18 @@ function goCheckout() {
 
   if (localStorage.getItem("profile_completed") !== "true") {
     alert("Please complete your profile before checkout");
-    location.href = "profile.html";
+    location.href = "../profile.html";
     return;
   }
 
-  location.href = "checkout.html";
+  // ✅ CORRECT PATH FOR GITHUB PAGES
+  location.href = "../checkout.html";
 }
 
 /* ================= INIT ================= */
 document.addEventListener("DOMContentLoaded", renderCart);
 </script>
+
 
 
 </body>
