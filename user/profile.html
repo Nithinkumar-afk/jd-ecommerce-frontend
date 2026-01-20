@@ -253,17 +253,37 @@ if (!USER_ID) {
   location.href = "../index.html";
 }
 
-/* ================= LOAD PROFILE ================= */
-fetch(`${API_USERS}/${USER_ID}`, {
-  headers: {
-    "x-user-id": USER_ID
-  }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Profile fetch failed");
-  return res.json();
-})
-.then(user => {
+/* ================= LOAD PROFILE (SAFE) ================= */
+loadProfile();
+
+function loadProfile() {
+  // TRY 1: /api/users/:id
+  fetch(`${API_USERS}/${USER_ID}`, {
+    headers: { "x-user-id": USER_ID }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Route 1 failed");
+    return res.json();
+  })
+  .then(fillProfile)
+  .catch(() => {
+    // TRY 2: /api/users (header based)
+    fetch(API_USERS, {
+      headers: { "x-user-id": USER_ID }
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Route 2 failed");
+      return res.json();
+    })
+    .then(fillProfile)
+    .catch(err => {
+      console.error("PROFILE LOAD FAILED:", err);
+      alert("Failed to load profile");
+    });
+  });
+}
+
+function fillProfile(user) {
   nameI.value = user.name || "";
   phoneI.value = user.phone || "";
   altPhoneI.value = user.alt_phone || "";
@@ -274,11 +294,7 @@ fetch(`${API_USERS}/${USER_ID}`, {
     img.hidden = false;
     avatar.hidden = true;
   }
-})
-.catch(err => {
-  console.error(err);
-  alert("Failed to load profile");
-});
+}
 
 /* ================= SAVE PROFILE ================= */
 saveBtn.addEventListener("click", () => {
@@ -321,7 +337,6 @@ function logout() {
   location.href = "../index.html";
 }
 </script>
-
 
 </body>
 </html>
