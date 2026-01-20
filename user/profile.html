@@ -231,7 +231,10 @@ button{
 "use strict";
 
 /* ================= CONFIG ================= */
-const BASE_URL = window.APP_CONFIG.API_BASE;
+const BASE_URL =
+  window.APP_CONFIG?.API_BASE ||
+  "https://jd-backend-production.up.railway.app";
+
 const API_USERS = BASE_URL + "/api/users";
 
 /* ================= ELEMENTS ================= */
@@ -239,17 +242,19 @@ const nameI = document.getElementById("name");
 const phoneI = document.getElementById("phone");
 const altPhoneI = document.getElementById("altPhone");
 const addressI = document.getElementById("address");
-const img = document.getElementById("profileImg");
+const img = document.getElementById("profileImage");
 const avatar = document.getElementById("avatar");
+const saveBtn = document.getElementById("saveBtn");
 
-/* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("user_id");
+/* ================= USER ================= */
+const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
+  alert("User not initialized");
   location.href = "../index.html";
 }
 
 /* ================= LOAD PROFILE ================= */
-fetch(`${API_USERS}/${USER_ID}`, {
+fetch(API_USERS, {
   headers: { "x-user-id": USER_ID }
 })
 .then(res => res.json())
@@ -263,28 +268,45 @@ fetch(`${API_USERS}/${USER_ID}`, {
     img.src = BASE_URL + user.image;
     img.hidden = false;
     avatar.hidden = true;
-  } else {
-    img.hidden = true;
-    avatar.hidden = false;
   }
 })
-.catch(() => {
-  alert("Failed to load profile");
-});
+.catch(() => alert("Failed to load profile"));
+
+/* ================= SAVE PROFILE ================= */
+saveBtn.onclick = () => {
+  if (!nameI.value || !phoneI.value || !addressI.value) {
+    alert("Please complete all required fields");
+    return;
+  }
+
+  fetch(API_USERS, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": USER_ID
+    },
+    body: JSON.stringify({
+      name: nameI.value,
+      phone: phoneI.value,
+      altPhone: altPhoneI.value,
+      address: addressI.value
+    })
+  })
+  .then(res => res.json())
+  .then(() => {
+    localStorage.setItem("profile_completed", "true");
+    alert("Profile saved successfully ✅");
+  })
+  .catch(() => alert("Failed to save profile"));
+};
 
 /* ================= LOGOUT ================= */
 function logout(){
-  // clear ONLY session data
-  localStorage.removeItem("user_id");
-  localStorage.removeItem("profileImagePreview");
-
-  // optional
-  // localStorage.removeItem("cart");
-
-  // redirect
+  localStorage.clear();
   location.href = "../index.html";
 }
 </script>
+
 
 </body>
 </html>

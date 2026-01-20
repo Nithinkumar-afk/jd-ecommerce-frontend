@@ -232,6 +232,8 @@ fetch(`${API_PROFILE}/${USER_ID}`, {
   if (!user.address || cart.length === 0) {
     notice.hidden = false;
     orderBtn.disabled = true;
+  } else {
+    orderBtn.disabled = false;
   }
 })
 .catch(() => {
@@ -263,6 +265,14 @@ summaryBox.innerHTML += `
 
 /* ================= PLACE ORDER ================= */
 orderBtn.onclick = () => {
+
+  /* 🔒 STRONG FRONTEND RULE */
+  if (localStorage.getItem("profile_completed") !== "true") {
+    alert("Please complete your profile before placing an order");
+    location.href = "profile.html";
+    return;
+  }
+
   orderBtn.disabled = true;
   orderBtn.textContent = "Placing Order...";
 
