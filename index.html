@@ -89,14 +89,19 @@ header{
 .profile-menu button:hover{background:rgba(255,255,255,.06)}
 .profile-menu .logout{color:#ff6b6b}
 
-/* CART */
-.cart{
+/* CART + CHECKOUT */
+.cart,
+.checkout{
   padding:10px 18px;
   border-radius:999px;
   border:none;
   background:linear-gradient(135deg,var(--primary),var(--primary2));
   color:white;
   cursor:pointer;
+  text-decoration:none;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
 }
 
 /* PRODUCTS */
@@ -210,6 +215,9 @@ header{
       </div>
     </div>
 
+    <!-- ✅ CHECKOUT LINK ADDED -->
+    <a href="user/checkout.html" class="checkout">Checkout</a>
+
     <button class="cart" onclick="location.href='user/cart.html'">
       Cart (<span id="cartCount">0</span>)
     </button>
@@ -278,7 +286,7 @@ document.onclick = e => {
     profileMenu.style.display="none";
 };
 
-/* LOGOUT (SAFE) */
+/* LOGOUT */
 function logout(){
   localStorage.removeItem("jd_user_id");
   location.reload();
