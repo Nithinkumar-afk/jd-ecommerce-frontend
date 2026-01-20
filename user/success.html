@@ -99,7 +99,10 @@ if (!USER_ID || !ORDER_ID) {
 fetch(`${API_ORDERS}/${ORDER_ID}`, {
   headers: { "x-user-id": USER_ID }
 })
-.then(res => res.json())
+.then(res => {
+  if (!res.ok) throw new Error("Failed to load order");
+  return res.json();
+})
 .then(order => {
   document.getElementById("orderId").textContent = order.id;
   document.getElementById("orderTotal").textContent =
@@ -118,7 +121,8 @@ fetch(`${API_ORDERS}/${ORDER_ID}`, {
 
   setTimeout(() => localStorage.removeItem("last_order_id"), 5000);
 })
-.catch(() => {
+.catch(err => {
+  console.error(err);
   alert("Failed to load order details");
   location.href = "../index.html";
 });

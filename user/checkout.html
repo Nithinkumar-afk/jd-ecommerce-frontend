@@ -128,7 +128,12 @@ if (!USER_ID) {
 const CART_KEY = "jd_cart";
 const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-let total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+if (cart.length === 0) {
+  alert("Cart is empty");
+  location.href = "../index.html";
+}
+
+const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
 document.getElementById("orderBtn").onclick = () => {
   fetch(API_ORDERS, {
@@ -140,19 +145,25 @@ document.getElementById("orderBtn").onclick = () => {
     body: JSON.stringify({
       items: cart.map(i => ({
         product_id: i.id,
-        price: i.price,
-        quantity: i.qty
+        price: Number(i.price),
+        quantity: Number(i.qty)
       })),
-      total
+      total: Number(total)
     })
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("Order failed");
+    return res.json();
+  })
   .then(data => {
     localStorage.setItem("last_order_id", data.orderId);
     localStorage.removeItem(CART_KEY);
     location.href = "success.html";
   })
-  .catch(() => alert("Order failed"));
+  .catch(err => {
+    console.error(err);
+    alert("Order failed");
+  });
 };
 </script>
 
