@@ -173,15 +173,19 @@ header h2{
 <script>
 "use strict";
 
-const API = window.APP_CONFIG.API_BASE;
-const FALLBACK = "https://via.placeholder.com/150";
+/* ================= CONFIG ================= */
+const API =
+  window.APP_CONFIG?.API_BASE ||
+  "https://jd-backend-production.up.railway.app";
+
 const CART_KEY = "jd_cart";
+const FALLBACK = "https://via.placeholder.com/150";
+const cartBox = document.getElementById("cartBox");
 
 /* ================= STATE ================= */
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-const cartBox = document.getElementById("cartBox");
 
-/* ================= RENDER CART ================= */
+/* ================= RENDER ================= */
 function renderCart(){
   if(cart.length === 0){
     cartBox.innerHTML = `<div class="empty">Your cart is empty 🛒</div>`;
@@ -191,7 +195,7 @@ function renderCart(){
   let total = 0;
   cartBox.innerHTML = "";
 
-  cart.forEach((item, index) => {
+  cart.forEach((item, i) => {
     total += item.price * item.qty;
 
     cartBox.insertAdjacentHTML("beforeend", `
@@ -202,13 +206,13 @@ function renderCart(){
           <p>₹${item.price}</p>
 
           <div class="qty-controls">
-            <button onclick="changeQty(${index}, -1)">−</button>
+            <button onclick="changeQty(${i}, -1)">−</button>
             <span>${item.qty}</span>
-            <button onclick="changeQty(${index}, 1)">+</button>
+            <button onclick="changeQty(${i}, 1)">+</button>
           </div>
         </div>
 
-        <button class="btn btn-danger" onclick="removeItem(${index})">
+        <button class="btn btn-danger" onclick="removeItem(${i})">
           Remove
         </button>
       </div>
