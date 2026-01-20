@@ -113,88 +113,49 @@ body{
   </div>
 </div>
 
-<script src="../config.js"></script>
 <script>
 "use strict";
 
-/* ================= CONFIG ================= */
 const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_ORDERS = BASE_URL + "/api/orders";
 
-/* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("user_id");
-const ORDER_ID = localStorage.getItem("last_order_id");
-
-if (!USER_ID || !ORDER_ID) {
+const USER_ID = localStorage.getItem("jd_user_id");
+if (!USER_ID) {
+  alert("Please login");
   location.href = "../index.html";
 }
 
-/* ================= ELEMENTS ================= */
-const orderIdEl = document.getElementById("orderId");
-const orderTotalEl = document.getElementById("orderTotal");
-const itemsBox = document.getElementById("orderItems");
+const CART_KEY = "jd_cart";
+const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-/* ================= LOAD ORDER ================= */
-fetch(`${API_ORDERS}/${ORDER_ID}`, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(res => res.json())
-.then(order => {
-  // Display order details
-  orderIdEl.textContent = order.id;
-  orderTotalEl.textContent = Number(order.total).toLocaleString("en-IN");
+let total = cart.reduce((s, i) => s + i.price * i.qty, 0);
 
-  itemsBox.innerHTML = "";
-  order.items.forEach(item => {
-    const itemTotal = item.price * item.qty;
-    itemsBox.innerHTML += `
-      <div class="item">
-        <div>${item.name} × ${item.qty}</div>
-        <div>₹${itemTotal.toLocaleString("en-IN")}</div>
-      </div>
-    `;
-  });
-
-  // Clear cart and remove last order id after showing
-  localStorage.removeItem("cart");
-  setTimeout(() => {
-    localStorage.removeItem("last_order_id");
-  }, 5000);
-})
-.catch(() => {
-  alert("Failed to load order details");
-  location.href = "../index.html";
-});
-
-/* ================= PLACE ORDER (example) ================= */
-/* 
-  Example fetch to place order from cart:
-  This part goes in your checkout page, not success.html
-*/
-function placeOrder(cartItems) {
-  fetch(`${API_ORDERS}`, {
+document.getElementById("orderBtn").onclick = () => {
+  fetch(API_ORDERS, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-user-id": USER_ID
     },
-    body: JSON.stringify({ items: cartItems })
+    body: JSON.stringify({
+      items: cart.map(i => ({
+        product_id: i.id,
+        price: i.price,
+        quantity: i.qty
+      })),
+      total
+    })
   })
   .then(res => res.json())
   .then(data => {
-    // Save last order id
-    localStorage.setItem("last_order_id", data.id);
-    // Clear cart
-    localStorage.removeItem("cart");
-    // Redirect to success page
+    localStorage.setItem("last_order_id", data.orderId);
+    localStorage.removeItem(CART_KEY);
     location.href = "success.html";
   })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to place order");
-  });
-}
+  .catch(() => alert("Order failed"));
+};
 </script>
+
 
 </body>
 </html>
