@@ -22,17 +22,33 @@
 body {
   background:var(--bg);
   color:var(--text);
-  font-family:Poppins;
+  font-family:Poppins,sans-serif;
   margin:0;
+  opacity:0;
+  transition:opacity .35s ease;
 }
+
+body.loaded{opacity:1}
 
 /* HEADER */
 header {
   padding:18px 20px;
-  font-size:24px;
+  font-size:22px;
   font-weight:600;
   border-bottom:1px solid var(--border);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
+
+header a{
+  color:#fff;
+  text-decoration:none;
+  font-size:14px;
+  opacity:.85;
+}
+
+header a:hover{opacity:1}
 
 /* FILTERS */
 .filters {
@@ -106,13 +122,18 @@ header {
   font-size:14px;
 }
 
+.actions button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
+
 .ship { background:#0ea5e9; color:#000 }
 .deliver { background:#22c55e; color:#000 }
 .cancel { background:#ef4444; color:#000 }
 .delete { background:#6b7280; color:#000 }
 
 @media (max-width:600px) {
-  header { font-size:20px; text-align:center }
+  header { font-size:18px }
   .filters { overflow-x:auto; flex-wrap:nowrap }
   .actions button { width:100% }
 }
@@ -121,7 +142,10 @@ header {
 
 <body>
 
-<header>JD Admin – Orders</header>
+<header>
+  <span>JD Admin – Orders</span>
+  <a href="admin-dashboard.html" class="nav-link">← Dashboard</a>
+</header>
 
 <div class="filters">
   <button class="active" onclick="setFilter('ALL',this)">All</button>
@@ -136,6 +160,21 @@ header {
 <script src="../config.js"></script>
 <script>
 "use strict";
+
+/* ================= PAGE LOAD ================= */
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+});
+
+/* ================= SMOOTH NAV ================= */
+document.querySelectorAll(".nav-link").forEach(link=>{
+  link.addEventListener("click",e=>{
+    e.preventDefault();
+    const href = link.getAttribute("href");
+    document.body.style.opacity = 0;
+    setTimeout(()=>location.href = href,200);
+  });
+});
 
 /* ================= SECURITY ================= */
 const ADMIN_KEY = localStorage.getItem("jd_admin");
@@ -158,12 +197,12 @@ async function loadOrders(){
       headers: { "x-api-key": ADMIN_KEY }
     });
 
-    if (!res.ok) throw new Error("Failed to load orders");
+    if (!res.ok) throw new Error();
 
     allOrders = await res.json();
     renderOrders();
 
-  } catch (err) {
+  } catch {
     document.getElementById("orders").innerHTML =
       "<p style='color:red'>Error loading orders</p>";
   }
@@ -231,7 +270,7 @@ function renderOrders(){
         <b>User:</b> ${o.user_id}<br>
         <b>Total:</b> ₹${Number(o.total).toLocaleString("en-IN")}
 
-        <div class="status ${o.status.toLowerCase()}">
+        <div class="status ${o.status}">
           Status: ${o.status}
         </div>
 
@@ -242,22 +281,26 @@ function renderOrders(){
         </div>
 
         <div class="actions">
-          <button onclick="updateStatus(${o.id},'SHIPPED')"
+          <button class="ship"
+            onclick="updateStatus(${o.id},'SHIPPED')"
             ${o.status !== "PLACED" ? "disabled" : ""}>
             Ship
           </button>
 
-          <button onclick="updateStatus(${o.id},'DELIVERED')"
+          <button class="deliver"
+            onclick="updateStatus(${o.id},'DELIVERED')"
             ${o.status !== "SHIPPED" ? "disabled" : ""}>
             Deliver
           </button>
 
-          <button onclick="updateStatus(${o.id},'CANCELLED')"
+          <button class="cancel"
+            onclick="updateStatus(${o.id},'CANCELLED')"
             ${o.status === "DELIVERED" ? "disabled" : ""}>
             Cancel
           </button>
 
-          <button onclick="deleteOrder(${o.id})">
+          <button class="delete"
+            onclick="deleteOrder(${o.id})">
             Delete
           </button>
         </div>

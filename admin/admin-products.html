@@ -7,7 +7,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
-<!-- ✅ GLOBAL CONFIG (IMPORTANT) -->
+<!-- GLOBAL CONFIG -->
 <script src="../config.js"></script>
 
 <style>
@@ -21,13 +21,19 @@
   --danger:#ef4444;
   --primary:#2563eb;
 }
+
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Poppins,sans-serif;
   background:var(--bg);
   color:var(--text);
+  opacity:0;
+  transition:opacity .35s ease;
 }
+
+body.loaded{opacity:1}
 
 /* HEADER */
 header{
@@ -39,8 +45,11 @@ header{
   border-bottom:1px solid var(--border);
   gap:14px;
 }
+
 header h2{margin:0;font-size:18px;font-weight:600}
+
 header div{display:flex;gap:10px}
+
 header button{
   padding:10px 16px;
   border-radius:12px;
@@ -62,6 +71,7 @@ header button{
   border:1px solid var(--border);
   max-width:1100px;
 }
+
 input,textarea{
   padding:12px;
   border-radius:12px;
@@ -70,7 +80,9 @@ input,textarea{
   color:#fff;
   font-family:Poppins;
 }
+
 textarea{resize:vertical}
+
 .form button{
   padding:14px;
   border:none;
@@ -79,6 +91,11 @@ textarea{resize:vertical}
   color:#000;
   font-weight:600;
   cursor:pointer;
+}
+
+.form button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
 }
 
 /* PRODUCTS */
@@ -90,6 +107,7 @@ textarea{resize:vertical}
   max-width:1300px;
   margin:auto;
 }
+
 .card{
   background:var(--card);
   border-radius:18px;
@@ -98,6 +116,7 @@ textarea{resize:vertical}
   display:flex;
   flex-direction:column;
 }
+
 .card img{
   width:100%;
   height:160px;
@@ -105,9 +124,11 @@ textarea{resize:vertical}
   border-radius:14px;
   background:#111;
 }
+
 .card small{color:var(--muted);margin-top:8px}
 .card strong{margin-top:6px}
 .card p{margin:6px 0 10px}
+
 .card button{
   margin-top:auto;
   background:var(--danger);
@@ -125,8 +146,8 @@ textarea{resize:vertical}
 <header>
   <h2>JD Admin – Product Management</h2>
   <div>
-    <button onclick="location.href='admin-dashboard.html'">Dashboard</button>
-    <button onclick="location.href='../index.html'">Store</button>
+    <button class="nav" data-href="admin-dashboard.html">Dashboard</button>
+    <button class="nav" data-href="../index.html">Store</button>
   </div>
 </header>
 
@@ -136,7 +157,7 @@ textarea{resize:vertical}
   <input id="price" type="number" placeholder="Price *">
   <input id="image" type="file" accept="image/*">
   <textarea id="desc" rows="3" placeholder="Description (optional)"></textarea>
-  <button onclick="addProduct()">Add Product</button>
+  <button id="addBtn" onclick="addProduct()">Add Product</button>
 </div>
 
 <!-- PRODUCT LIST -->
@@ -144,6 +165,20 @@ textarea{resize:vertical}
 
 <script>
 "use strict";
+
+/* ================= PAGE ANIMATION ================= */
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+});
+
+/* ================= SMOOTH NAV ================= */
+document.querySelectorAll(".nav").forEach(btn=>{
+  btn.onclick = ()=>{
+    const href = btn.dataset.href;
+    document.body.style.opacity = 0;
+    setTimeout(()=>location.href = href,200);
+  };
+});
 
 /* ================= CONFIG ================= */
 const BASE = window.APP_CONFIG.API_BASE;
@@ -163,11 +198,12 @@ const nameEl = document.getElementById("name");
 const priceEl = document.getElementById("price");
 const imageEl = document.getElementById("image");
 const descEl  = document.getElementById("desc");
+const addBtn  = document.getElementById("addBtn");
 
 /* ================= LOAD PRODUCTS ================= */
-async function loadProducts() {
+async function loadProducts(){
   list.innerHTML = "Loading products...";
-  try {
+  try{
     const res = await fetch(API + "?ts=" + Date.now());
     if(!res.ok) throw new Error();
 
@@ -192,9 +228,8 @@ async function loadProducts() {
       `);
     });
 
-  } catch {
-    list.innerHTML =
-      "<p style='color:#ef4444'>Failed to load products</p>";
+  }catch{
+    list.innerHTML = "<p style='color:#ef4444'>Failed to load products</p>";
   }
 }
 
@@ -204,6 +239,9 @@ async function addProduct(){
     alert("Name and price required");
     return;
   }
+
+  addBtn.disabled = true;
+  addBtn.textContent = "Adding...";
 
   const form = new FormData();
   form.append("name", nameEl.value.trim());
@@ -230,6 +268,9 @@ async function addProduct(){
 
   }catch{
     alert("Failed to add product");
+  }finally{
+    addBtn.disabled = false;
+    addBtn.textContent = "Add Product";
   }
 }
 

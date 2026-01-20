@@ -22,7 +22,12 @@ body{
   background:radial-gradient(circle at top,#0b0b0b,#000);
   color:#fff;
   min-height:100vh;
+  opacity:0;
+  transition:opacity .35s ease;
 }
+
+/* PAGE FADE IN */
+body.loaded{opacity:1}
 
 /* ================= HEADER ================= */
 header{
@@ -35,6 +40,7 @@ header{
   align-items:center;
   position:sticky;
   top:0;
+  z-index:10;
 }
 
 .header-left{
@@ -64,7 +70,10 @@ header a{
   text-decoration:none;
   font-size:14px;
   opacity:.9;
+  transition:.2s;
 }
+
+header a:hover{opacity:1}
 
 /* ================= CONTAINER ================= */
 .container{
@@ -73,7 +82,7 @@ header a{
   padding:28px 22px;
 }
 
-/* ================= STATS CARDS ================= */
+/* ================= STATS ================= */
 .cards{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -115,11 +124,13 @@ header a{
   padding:18px;
   border-radius:18px;
   transition:.25s;
+  display:block;
 }
 
 .links a:hover{
   border-color:var(--primary);
-  background:rgba(77,163,255,.12);
+  background:rgba(77,163,255,.15);
+  transform:translateY(-2px);
 }
 
 /* ================= RESPONSIVE ================= */
@@ -145,7 +156,7 @@ header a{
     <div class="logo">JD</div>
     <h2>Admin Dashboard</h2>
   </div>
-  <a href="../index.html">Go to Store →</a>
+  <a href="../index.html" class="nav-link">Go to Store →</a>
 </header>
 
 <div class="container">
@@ -173,10 +184,10 @@ header a{
   </div>
 
   <div class="links">
-    <a href="admin-products.html">📦 Manage Products</a>
-    <a href="admin-orders.html">📑 Manage Orders</a>
-    <a href="admin-users.html">👥 Manage Users</a>
-    <a href="../index.html">🛒 View Store</a>
+    <a href="admin-products.html" class="nav-link">📦 Manage Products</a>
+    <a href="admin-orders.html" class="nav-link">📑 Manage Orders</a>
+    <a href="admin-users.html" class="nav-link">👥 Manage Users</a>
+    <a href="../index.html" class="nav-link">🛒 View Store</a>
   </div>
 
 </div>
@@ -184,6 +195,21 @@ header a{
 <script src="../config.js"></script>
 <script>
 "use strict";
+
+/* ================= PAGE LOAD ================= */
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+});
+
+/* ================= SMOOTH NAVIGATION ================= */
+document.querySelectorAll(".nav-link").forEach(link=>{
+  link.addEventListener("click",e=>{
+    e.preventDefault();
+    const href = link.getAttribute("href");
+    document.body.style.opacity = 0;
+    setTimeout(()=>location.href = href,200);
+  });
+});
 
 /* ================= SECURITY ================= */
 const ADMIN_KEY = localStorage.getItem("jd_admin");
@@ -208,42 +234,23 @@ const totalRevenueEl = document.getElementById("totalRevenue");
 /* ================= LOAD DASHBOARD ================= */
 async function loadDashboard(){
   try{
-    /* PRODUCTS */
-    const productsRes = await fetch(API + "/api/products");
-    const products = await productsRes.json();
-    totalProductsEl.textContent = Array.isArray(products)
-      ? products.length
-      : 0;
+    const products = await (await fetch(API+"/api/products")).json();
+    totalProductsEl.textContent = Array.isArray(products) ? products.length : 0;
 
-    /* USERS (ADMIN) */
-    const usersRes = await fetch(API + "/api/users", {
-      headers: { "x-api-key": ADMIN_KEY }
-    });
-    const users = await usersRes.json();
-    totalUsersEl.textContent = Array.isArray(users)
-      ? users.length
-      : 0;
+    const users = await (await fetch(API+"/api/users",{
+      headers:{ "x-api-key":ADMIN_KEY }
+    })).json();
+    totalUsersEl.textContent = Array.isArray(users) ? users.length : 0;
 
-    /* ORDERS + REVENUE (ADMIN) */
-    const statsRes = await fetch(API + "/api/orders/admin", {
-      headers: { "x-api-key": ADMIN_KEY }
-    });
-    const stats = await statsRes.json();
+    const stats = await (await fetch(API+"/api/orders/admin",{
+      headers:{ "x-api-key":ADMIN_KEY }
+    })).json();
 
-    totalOrdersEl.textContent =
-      stats.totalOrders ?? 0;
+    totalOrdersEl.textContent = stats.totalOrders ?? 0;
+    totalRevenueEl.textContent = formatMoney(stats.totalRevenue ?? 0);
 
-    totalRevenueEl.textContent =
-      formatMoney(stats.totalRevenue ?? 0);
-
-  } catch (err) {
-    console.error("Dashboard error:", err);
-
-    totalProductsEl.textContent = "—";
-    totalUsersEl.textContent = "—";
-    totalOrdersEl.textContent = "—";
-    totalRevenueEl.textContent = "—";
-
+  }catch(err){
+    console.error(err);
     alert("Failed to load dashboard data");
   }
 }
@@ -251,7 +258,6 @@ async function loadDashboard(){
 /* ================= INIT ================= */
 loadDashboard();
 </script>
-
 
 </body>
 </html>
