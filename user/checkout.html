@@ -16,7 +16,6 @@
   --primary:#4da3ff;
   --primary2:#2b6df6;
   --success:#22c55e;
-  --warning:#fbbf24;
 }
 
 body{
@@ -88,8 +87,6 @@ input{
 
 /* ADDRESS */
 .address-card{
-  display:flex;
-  gap:10px;
   padding:14px;
   border-radius:16px;
   border:1px solid var(--border);
@@ -174,118 +171,123 @@ input{
 <script>
 "use strict";
 
-/* ================= CONFIG ================= */
-const BASE_URL =
-  window.APP_CONFIG?.API_BASE ||
-  "https://jd-backend-production.up.railway.app";
+document.addEventListener("DOMContentLoaded", () => {
 
-const API_ORDERS = BASE_URL + "/api/orders";
-const API_PROFILE = BASE_URL + "/api/users";
+  /* ================= CONFIG ================= */
+  const BASE_URL =
+    window.APP_CONFIG?.API_BASE ||
+    "https://jd-backend-production.up.railway.app";
 
-/* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("jd_user_id");
-if (!USER_ID) {
-  alert("Please login to continue");
-  location.href = "../index.html";
-}
+  const API_ORDERS = BASE_URL + "/api/orders";
+  const API_USERS  = BASE_URL + "/api/users";
 
-/* ================= CART ================= */
-const CART_KEY = "jd_cart";
-const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+  /* ================= AUTH ================= */
+  const USER_ID = localStorage.getItem("jd_user_id");
+  if (!USER_ID) {
+    alert("Please login to continue");
+    location.href = "../index.html";
+    return;
+  }
 
-/* ================= ELEMENTS ================= */
-const nameInput = document.getElementById("name");
-const phoneInput = document.getElementById("phone");
-const addressList = document.getElementById("addressList");
-const summaryBox = document.getElementById("summary");
-const orderBtn = document.getElementById("orderBtn");
+  /* ================= CART ================= */
+  const CART_KEY = "jd_cart";
+  const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-/* ================= EMPTY CART ================= */
-if (cart.length === 0) {
-  alert("Your cart is empty");
-  location.href = "cart.html";
-}
+  if (cart.length === 0) {
+    alert("Your cart is empty");
+    location.href = "cart.html";
+    return;
+  }
 
-/* ================= LOAD USER ================= */
-fetch(API_PROFILE, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(res => res.json())
-.then(user => {
-  nameInput.value = user.name || "";
-  phoneInput.value = user.phone || "";
+  /* ================= ELEMENTS ================= */
+  const nameInput = document.getElementById("name");
+  const phoneInput = document.getElementById("phone");
+  const addressList = document.getElementById("addressList");
+  const summaryBox = document.getElementById("summary");
+  const orderBtn = document.getElementById("orderBtn");
 
-  addressList.innerHTML = `
-    <div class="address-card">
-      📍 ${user.address || "Address not provided"}
-    </div>
-  `;
-})
-.catch(err => {
-  console.error(err);
-  alert("Failed to load user data");
-});
-
-/* ================= ORDER SUMMARY ================= */
-let total = 0;
-summaryBox.innerHTML = "";
-
-cart.forEach(item => {
-  const itemTotal = item.price * item.qty;
-  total += itemTotal;
-
-  summaryBox.insertAdjacentHTML("beforeend", `
-    <div class="summary-item">
-      <span>${item.name} × ${item.qty}</span>
-      <span>₹${itemTotal}</span>
-    </div>
-  `);
-});
-
-summaryBox.insertAdjacentHTML("beforeend", `
-  <div class="summary-total">
-    <strong>Total</strong>
-    <strong>₹${total}</strong>
-  </div>
-`);
-
-/* ================= PLACE ORDER ================= */
-orderBtn.addEventListener("click", () => {
-
-  orderBtn.disabled = true;
-  orderBtn.textContent = "Placing Order...";
-
-  const orderData = {
-    items: cart.map(i => ({
-      name: i.name,
-      price: i.price,
-      quantity: i.qty
-    })),
-    total
-  };
-
-  fetch(API_ORDERS, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": USER_ID
-    },
-    body: JSON.stringify(orderData)
+  /* ================= LOAD USER ================= */
+  fetch(API_USERS, {
+    headers: { "x-user-id": USER_ID }
   })
   .then(res => {
-    if (!res.ok) throw new Error("Order failed");
+    if (!res.ok) throw new Error("User fetch failed");
     return res.json();
   })
-  .then(() => {
-    localStorage.removeItem(CART_KEY);
-    location.href = "success.html";
+  .then(user => {
+    nameInput.value = user.name || "";
+    phoneInput.value = user.phone || "";
+    addressList.innerHTML = `
+      <div class="address-card">
+        📍 ${user.address || "Address not provided"}
+      </div>
+    `;
   })
-  .catch(err => {
-    console.error(err);
-    alert("Order failed. Try again.");
-    orderBtn.disabled = false;
-    orderBtn.textContent = "Place Order";
+  .catch(() => {
+    alert("Failed to load user data");
   });
+
+  /* ================= ORDER SUMMARY ================= */
+  let total = 0;
+  summaryBox.innerHTML = "";
+
+  cart.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    total += itemTotal;
+
+    summaryBox.insertAdjacentHTML("beforeend", `
+      <div class="summary-item">
+        <span>${item.name} × ${item.qty}</span>
+        <span>₹${itemTotal}</span>
+      </div>
+    `);
+  });
+
+  summaryBox.insertAdjacentHTML("beforeend", `
+    <div class="summary-total">
+      <strong>Total</strong>
+      <strong>₹${total}</strong>
+    </div>
+  `);
+
+  /* ================= PLACE ORDER ================= */
+  orderBtn.addEventListener("click", () => {
+
+    orderBtn.disabled = true;
+    orderBtn.textContent = "Placing Order...";
+
+    const orderData = {
+      items: cart.map(i => ({
+        name: i.name,
+        price: i.price,
+        quantity: i.qty
+      })),
+      total
+    };
+
+    fetch(API_ORDERS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": USER_ID
+      },
+      body: JSON.stringify(orderData)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Order failed");
+      return res.json();
+    })
+    .then(() => {
+      localStorage.removeItem(CART_KEY);
+      location.href = "success.html";
+    })
+    .catch(() => {
+      alert("Order failed. Try again.");
+      orderBtn.disabled = false;
+      orderBtn.textContent = "Place Order";
+    });
+  });
+
 });
 </script>
 
