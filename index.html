@@ -6,12 +6,9 @@
 <title>JD Store</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-
-<!-- ✅ GLOBAL CONFIG -->
 <script src="config.js"></script>
 
 <style>
-/* ===== UI RESET ===== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --glass:rgba(255,255,255,.06);
@@ -26,7 +23,7 @@ body{
   min-height:100vh;
 }
 
-/* ===== HEADER ===== */
+/* HEADER */
 header{
   display:flex;
   justify-content:space-between;
@@ -52,7 +49,7 @@ header{
 }
 .header-right{display:flex;gap:14px;align-items:center}
 
-/* ===== PROFILE ===== */
+/* PROFILE */
 .profile-wrapper{position:relative}
 .profile-btn{
   display:flex;
@@ -92,7 +89,7 @@ header{
 .profile-menu button:hover{background:rgba(255,255,255,.06)}
 .profile-menu .logout{color:#ff6b6b}
 
-/* ===== CART ===== */
+/* CART */
 .cart{
   padding:10px 18px;
   border-radius:999px;
@@ -102,7 +99,7 @@ header{
   cursor:pointer;
 }
 
-/* ===== PRODUCTS ===== */
+/* PRODUCTS */
 .container{padding:26px}
 .products{
   display:grid;
@@ -142,7 +139,7 @@ header{
   cursor:pointer;
 }
 
-/* ===== TOAST ===== */
+/* TOAST */
 .toast{
   position:fixed;
   bottom:30px;
@@ -156,7 +153,7 @@ header{
 }
 .toast.show{opacity:1}
 
-/* ===== MODAL ===== */
+/* MODAL */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -202,7 +199,7 @@ header{
 
   <div class="header-right">
     <div class="profile-wrapper">
-      <div class="profile-btn" onclick="toggleProfileMenu()">
+      <div class="profile-btn" id="profileBtn">
         <div class="avatar">G</div>
         <span>Guest</span>
       </div>
@@ -237,23 +234,16 @@ header{
 <script>
 "use strict";
 
-/* ===== CONFIG ===== */
+/* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
 const API_PRODUCTS = API + "/api/products?ts=" + Date.now();
 const FALLBACK = "https://via.placeholder.com/300x200";
 
-/* ===== USER INIT ===== */
-if(!localStorage.getItem("jd_user_id")){
-  fetch(API + "/api/profile/init",{method:"POST"})
-    .then(r=>r.json())
-    .then(d=>localStorage.setItem("jd_user_id",d.userId));
-}
-
-/* ===== STATE ===== */
+/* STATE */
 let productsData = [];
 let cart = JSON.parse(localStorage.getItem("jd_cart")) || [];
 
-/* ===== ELEMENTS ===== */
+/* ELEMENTS */
 const products = document.getElementById("products");
 const cartCount = document.getElementById("cartCount");
 const search = document.getElementById("search");
@@ -263,31 +253,38 @@ const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
 const profileMenu = document.getElementById("profileMenu");
+const profileBtn = document.getElementById("profileBtn");
 
-/* ===== CART COUNT ===== */
+/* CART COUNT */
 function updateCartCount(){
   cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
 }
 updateCartCount();
 
-/* ===== TOAST ===== */
+/* TOAST */
 function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* ===== PROFILE ===== */
-function toggleProfileMenu(){
+/* PROFILE MENU */
+profileBtn.onclick = () => {
   profileMenu.style.display =
     profileMenu.style.display==="flex"?"none":"flex";
-}
+};
+document.onclick = e => {
+  if(!profileBtn.contains(e.target))
+    profileMenu.style.display="none";
+};
+
+/* LOGOUT (SAFE) */
 function logout(){
-  localStorage.clear();
-  location.href="index.html";
+  localStorage.removeItem("jd_user_id");
+  location.reload();
 }
 
-/* ===== LOAD PRODUCTS ===== */
+/* LOAD PRODUCTS */
 fetch(API_PRODUCTS)
   .then(r=>r.json())
   .then(d=>{
@@ -320,7 +317,7 @@ function renderProducts(){
     });
 }
 
-/* ===== CART ===== */
+/* CART */
 function addToCart(id){
   if(cart.find(i=>i.id===id)){
     showToast("Already in cart");
@@ -334,7 +331,7 @@ function addToCart(id){
   showToast("Added to cart 🛒");
 }
 
-/* ===== MODAL ===== */
+/* MODAL */
 function openModal(id){
   const p = productsData.find(p=>p.id===id);
   if(!p) return;
@@ -346,7 +343,6 @@ function openModal(id){
 function closeModal(){ modal.style.display="none"; }
 modal.onclick = e => { if(e.target===modal) closeModal(); };
 
-/* ===== SEARCH ===== */
 search.oninput = renderProducts;
 </script>
 
