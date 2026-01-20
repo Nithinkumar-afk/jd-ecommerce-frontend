@@ -42,6 +42,27 @@ header div{
   font-size:16px;
 }
 
+/* HEADER BUTTONS */
+.header-btn{
+  padding:8px 14px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  text-decoration:none;
+}
+
+.checkout-btn{
+  background:#2563eb;
+  color:white;
+}
+
+.logout{
+  background:#dc2626;
+  color:white;
+}
+
 /* ================= CONTAINER ================= */
 .container{
   max-width:900px;
@@ -120,15 +141,6 @@ button{
   cursor:pointer;
   width:100%;
 }
-
-/* ================= LOGOUT ================= */
-.logout{
-  background:#dc2626;
-  padding:8px 14px;
-  border-radius:12px;
-  font-size:13px;
-  width:auto;
-}
 </style>
 </head>
 
@@ -138,7 +150,16 @@ button{
   <a href="../index.html">←</a>
   <div>
     My Profile
-    <button class="logout" onclick="logout()">Logout</button>
+
+    <!-- ✅ CHECKOUT LINK (CORRECT) -->
+    <a
+      href="https://nithinkumar-afk.github.io/jd-ecommerce-frontend/user/checkout.html"
+      class="header-btn checkout-btn"
+    >
+      Checkout
+    </a>
+
+    <button class="header-btn logout" onclick="logout()">Logout</button>
   </div>
 </header>
 
@@ -166,7 +187,6 @@ button{
 <label>Address</label>
 <textarea id="address"></textarea>
 
-<!-- ✅ ADDED IMAGE INPUT -->
 <label>Profile Image</label>
 <input type="file" id="imageInput" accept="image/*">
 
