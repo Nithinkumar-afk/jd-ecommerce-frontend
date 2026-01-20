@@ -185,8 +185,10 @@ const cartBox = document.getElementById("cartBox");
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
 /* ================= RENDER ================= */
-function renderCart(){
-  if(cart.length === 0){
+function renderCart() {
+  if (!cartBox) return;
+
+  if (cart.length === 0) {
     cartBox.innerHTML = `<div class="empty">Your cart is empty 🛒</div>`;
     return;
   }
@@ -205,13 +207,13 @@ function renderCart(){
           <p>₹${item.price}</p>
 
           <div class="qty-controls">
-            <button onclick="changeQty(${i}, -1)">−</button>
+            <button data-i="${i}" data-d="-1">−</button>
             <span>${item.qty}</span>
-            <button onclick="changeQty(${i}, 1)">+</button>
+            <button data-i="${i}" data-d="1">+</button>
           </div>
         </div>
 
-        <button class="btn btn-danger" onclick="removeItem(${i})">
+        <button class="btn btn-danger" data-remove="${i}">
           Remove
         </button>
       </div>
@@ -221,32 +223,57 @@ function renderCart(){
   cartBox.insertAdjacentHTML("beforeend", `
     <div class="cart-summary">
       <strong>Total: ₹${total}</strong>
-      <button class="btn btn-primary" onclick="goCheckout()">
+      <button id="checkoutBtn" class="btn btn-primary">
         Checkout
       </button>
     </div>
   `);
+
+  bindEvents();
+}
+
+/* ================= EVENTS ================= */
+function bindEvents() {
+  // Qty buttons
+  document.querySelectorAll(".qty-controls button").forEach(btn => {
+    btn.onclick = () => {
+      changeQty(+btn.dataset.i, +btn.dataset.d);
+    };
+  });
+
+  // Remove buttons
+  document.querySelectorAll("[data-remove]").forEach(btn => {
+    btn.onclick = () => removeItem(+btn.dataset.remove);
+  });
+
+  // Checkout button
+  const checkoutBtn = document.getElementById("checkoutBtn");
+  if (checkoutBtn) {
+    checkoutBtn.onclick = goCheckout;
+  }
 }
 
 /* ================= ACTIONS ================= */
-function changeQty(i, d){
+function changeQty(i, d) {
   cart[i].qty += d;
-  if(cart[i].qty < 1) cart[i].qty = 1;
+  if (cart[i].qty < 1) cart[i].qty = 1;
   save();
 }
 
-function removeItem(i){
+function removeItem(i) {
   cart.splice(i, 1);
   save();
 }
 
-function save(){
+function save() {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   renderCart();
 }
 
 /* ================= CHECKOUT ================= */
 function goCheckout() {
+  console.log("Checkout clicked");
+
   if (cart.length === 0) {
     alert("Your cart is empty");
     return;
@@ -261,9 +288,10 @@ function goCheckout() {
   location.href = "checkout.html";
 }
 
-/* INIT */
-renderCart();
+/* ================= INIT ================= */
+document.addEventListener("DOMContentLoaded", renderCart);
 </script>
+
 
 </body>
 </html>
