@@ -227,133 +227,38 @@ button{
 </div>
 
 <script>
-"use strict";
-
-/* ================= CONFIG ================= */
-const BASE = "https://shopx-production-406f.up.railway.app";
-const PROFILE_API = BASE + "/api/profile";
-const USER_INIT_API = BASE + "/api/user/init";
-
-/* ================= SESSION ================= */
-async function getUserId(){
-  let id = localStorage.getItem("userId");
-  if(!id){
-    const r = await fetch(USER_INIT_API,{method:"POST"});
-    const d = await r.json();
-    id = d.userId;
-    localStorage.setItem("userId",id);
-  }
-  return id;
+  // If user is logged out, create new user
+if(!localStorage.getItem("userId")){
+  // New user will be created automatically
+  console.log("New user session");
 }
 
-/* ================= ELEMENTS ================= */
-const nameI = name;
-const phoneI = phone;
-const altPhoneI = altPhone;
-const addressI = address;
-const img = profileImage;
-const avatar = avatar;
-const fileInput = document.getElementById("fileInput");
-
-let userId;
-let selectedFile;
-
-/* ================= IMAGE ================= */
-picBox.onclick = ()=>fileInput.click();
-fileInput.onchange = ()=>{
-  selectedFile = fileInput.files[0];
-  const r = new FileReader();
-  r.onload = ()=>{
-    img.src = r.result;
-    img.hidden=false;
-    avatar.hidden=true;
-    localStorage.setItem("profileImagePreview",r.result);
-  };
-  r.readAsDataURL(selectedFile);
-};
-
-/* ================= LOCAL CACHE ================= */
-function loadLocal(){
-  nameI.value = localStorage.getItem("p_name")||"";
-  phoneI.value = localStorage.getItem("p_phone")||"";
-  altPhoneI.value = localStorage.getItem("p_alt")||"";
-  addressI.value = localStorage.getItem("p_address")||"";
-
-  const imgCache = localStorage.getItem("profileImagePreview");
-  if(imgCache){
-    img.src = imgCache;
-    img.hidden=false;
-    avatar.hidden=true;
-  }
-}
-
-/* ================= BACKEND LOAD ================= */
-async function loadProfile(){
-  const r = await fetch(PROFILE_API,{headers:{"x-user-id":userId}});
-  const d = await r.json();
-
-  if(d.name){
-    nameI.value=d.name;
-    phoneI.value=d.phone||"";
-    altPhoneI.value=d.alt_phone||"";
-    addressI.value=d.address_line||"";
-
-    localStorage.setItem("p_name",nameI.value);
-    localStorage.setItem("p_phone",phoneI.value);
-    localStorage.setItem("p_alt",altPhoneI.value);
-    localStorage.setItem("p_address",addressI.value);
-  }
-
-  if(d.image){
-    img.src=BASE+d.image;
-    img.hidden=false;
-    avatar.hidden=true;
-  }
-}
-
-/* ================= SAVE ================= */
-saveBtn.onclick = async ()=>{
-  localStorage.setItem("p_name",nameI.value);
-  localStorage.setItem("p_phone",phoneI.value);
-  localStorage.setItem("p_alt",altPhoneI.value);
-  localStorage.setItem("p_address",addressI.value);
-
-  const f = new FormData();
-  f.append("name",nameI.value);
-  f.append("phone",phoneI.value);
-  f.append("altPhone",altPhoneI.value);
-  if(selectedFile) f.append("image",selectedFile);
-
-  await fetch(PROFILE_API,{
-    method:"POST",
-    headers:{"x-user-id":userId},
-    body:f
-  });
-
-  await fetch(PROFILE_API+"/address",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json",
-      "x-user-id":userId
-    },
-    body:JSON.stringify({address_line:addressI.value})
-  });
-
-  alert("Profile saved ✅");
-};
-
-/* ================= LOGOUT ================= */
 function logout(){
-  localStorage.clear();
-  location.href="../index.html";
+  // Clear ALL user session data
+  localStorage.removeItem("userId");
+  localStorage.removeItem("profileImagePreview");
+
+  // Optional: clear cart later if you store it
+  // localStorage.removeItem("cart");
+  function clearProfileUI(){
+  nameI.value = "";
+  phoneI.value = "";
+  altPhoneI.value = "";
+  addressI.value = "";
+
+  img.hidden = true;
+  avatar.hidden = false;
+
+  localStorage.removeItem("profileImagePreview");
+}
+if(!localStorage.getItem("userId")){
+  clearProfileUI();
 }
 
-/* ================= INIT ================= */
-(async()=>{
-  userId = await getUserId();
-  loadLocal();
-  await loadProfile();
-})();
+
+  // Redirect to home
+  window.location.href = "../index.html";
+}
 </script>
 
 </body>

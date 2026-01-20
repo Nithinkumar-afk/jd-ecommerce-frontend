@@ -156,62 +156,62 @@ header a{
 </div>
 
 <script>
-// ================= STATIC USERS =================
-const users = [
-  {
-    name: "Nithin Kumar",
-    phone: "9876543210",
-    altPhone: "9123456780",
-    address: "Bangalore, Karnataka",
-    image: "https://i.pravatar.cc/150?img=3"
-  },
-  {
-    name: "Arun Raj",
-    phone: "9988776655",
-    altPhone: "",
-    address: "Chennai, Tamil Nadu",
-    image: "https://i.pravatar.cc/150?img=12"
-  },
-  {
-    name: "Guest User",
-    phone: "",
-    altPhone: "",
-    address: "",
-    image: ""
-  }
-];
+/* ================= SECURITY ================= */
+if (!localStorage.getItem("jd_admin")) {
+  alert("Unauthorized");
+  location.href = "../index.html";
+}
+
+/* ================= CONFIG ================= */
+const API = window.APP_CONFIG
+  ? window.APP_CONFIG.API_BASE
+  : "https://jd-backend-production.up.railway.app";
 
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
-// ================= RENDER =================
-function renderUsers(){
-  if(!users.length){
+/* ================= LOAD USERS ================= */
+fetch(API + "/api/users", {
+  headers: {
+    "x-api-key": localStorage.getItem("jd_admin")
+  }
+})
+.then(res => {
+  if (!res.ok) throw new Error("Unauthorized");
+  return res.json();
+})
+.then(users => {
+  if (!users.length) {
     usersList.innerHTML =
       "<p style='opacity:.6'>No users available</p>";
     return;
   }
 
-  users.forEach(u=>{
+  usersList.innerHTML = "";
+
+  users.forEach(u => {
     usersList.innerHTML += `
       <div class="user-card">
         <div class="user-img">
-          <img src="${u.image || FALLBACK_IMG}"
+          <img src="${u.image ? API + u.image : FALLBACK_IMG}"
                onerror="this.src='${FALLBACK_IMG}'">
         </div>
         <div class="user-info">
           <p><strong>${u.name || "Guest User"}</strong></p>
           <p>📞 Phone: ${u.phone || "-"}</p>
-          <p>📱 Alt Phone: ${u.altPhone || "-"}</p>
           <p>🏠 Address: ${u.address || "-"}</p>
+          <p style="font-size:12px;opacity:.6">
+            Joined: ${new Date(u.created_at).toLocaleDateString()}
+          </p>
         </div>
       </div>
     `;
   });
-}
-
-// ================= INIT =================
-renderUsers();
+})
+.catch(() => {
+  usersList.innerHTML =
+    "<p style='color:#ff6b6b'>Failed to load users</p>";
+});
 </script>
 
 </body>
