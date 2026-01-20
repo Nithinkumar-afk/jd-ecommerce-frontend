@@ -162,7 +162,6 @@ header h2{
 <body>
 
 <header>
-  <!-- FIXED BACK LINK -->
   <a href="../index.html">←</a>
   <h2>My Cart</h2>
 </header>
@@ -222,7 +221,9 @@ function renderCart(){
   cartBox.insertAdjacentHTML("beforeend", `
     <div class="cart-summary">
       <strong>Total: ₹${total}</strong>
-      <button class="btn btn-primary">Checkout</button>
+      <button class="btn btn-primary" onclick="goCheckout()">
+        Checkout
+      </button>
     </div>
   `);
 }
@@ -244,10 +245,25 @@ function save(){
   renderCart();
 }
 
+/* ================= CHECKOUT ================= */
+function goCheckout() {
+  if (cart.length === 0) {
+    alert("Your cart is empty");
+    return;
+  }
+
+  if (localStorage.getItem("profile_completed") !== "true") {
+    alert("Please complete your profile before checkout");
+    location.href = "profile.html";
+    return;
+  }
+
+  location.href = "checkout.html";
+}
+
 /* INIT */
 renderCart();
 </script>
-
 
 </body>
 </html>

@@ -196,14 +196,14 @@ const API_ORDERS = BASE_URL + "/api/orders";
 const API_PROFILE = BASE_URL + "/api/users";
 
 /* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("user_id");
+const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
   alert("Please login to continue");
   location.href = "../index.html";
 }
 
 /* ================= CART ================= */
-const CART_KEY = "cart";
+const CART_KEY = "jd_cart";
 const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
 /* ================= ELEMENTS ================= */
@@ -269,7 +269,7 @@ orderBtn.onclick = () => {
   /* 🔒 STRONG FRONTEND RULE */
   if (localStorage.getItem("profile_completed") !== "true") {
     alert("Please complete your profile before placing an order");
-    location.href = "profile.html";
+    location.href = "../user/profile.html";
     return;
   }
 
