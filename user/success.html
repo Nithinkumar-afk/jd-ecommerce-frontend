@@ -9,7 +9,6 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-
 body{
   font-family:Poppins,sans-serif;
   background:radial-gradient(circle at top,#0f172a,#020617);
@@ -19,37 +18,25 @@ body{
   align-items:center;
   justify-content:center;
 }
-
 .container{
-  width:100%;
   max-width:720px;
-  margin:40px 18px;
+  width:100%;
+  margin:20px;
   background:rgba(255,255,255,.07);
-  backdrop-filter:blur(20px);
   border-radius:26px;
   padding:28px;
   border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 25px 60px rgba(0,0,0,.45)
 }
-
-.success{text-align:center;margin-bottom:26px}
-.success h1{color:#22c55e;margin-bottom:8px;font-size:24px}
-
-.order-id{margin-top:10px;color:#94a3b8;font-size:14px}
-
-#orderItems{margin-top:16px}
-
+.success{text-align:center}
+.success h1{color:#22c55e}
 .item{
   background:rgba(255,255,255,.08);
   padding:16px;
   border-radius:18px;
   margin-top:14px;
-  border:1px solid rgba(255,255,255,.12);
   display:flex;
   justify-content:space-between;
-  gap:12px
 }
-
 .total{
   text-align:right;
   font-size:18px;
@@ -57,13 +44,11 @@ body{
   margin-top:26px;
   color:#22c55e
 }
-
 .actions{
   margin-top:34px;
   display:flex;
   gap:16px
 }
-
 .actions a{
   flex:1;
   text-align:center;
@@ -72,22 +57,8 @@ body{
   text-decoration:none;
   font-weight:600;
 }
-
-.home{
-  background:linear-gradient(135deg,#38bdf8,#2563eb);
-  color:#fff
-}
-
-.orders{
-  background:rgba(255,255,255,.12);
-  color:#f8fafc;
-  border:1px solid rgba(255,255,255,.2)
-}
-
-@media(max-width:600px){
-  .item{flex-direction:column}
-  .actions{flex-direction:column}
-}
+.home{background:#2563eb;color:#fff}
+.orders{background:#334155;color:#fff}
 </style>
 </head>
 
@@ -96,9 +67,7 @@ body{
 <div class="container">
   <div class="success">
     <h1>✅ Order Placed Successfully</h1>
-    <div class="order-id">
-      Order ID: <b>#<span id="orderId"></span></b>
-    </div>
+    <p>Order ID: <b>#<span id="orderId"></span></b></p>
   </div>
 
   <div id="orderItems"></div>
@@ -113,87 +82,23 @@ body{
   </div>
 </div>
 
-<script src="../config.js"></script>
 <script>
-"use strict";
+const order = JSON.parse(localStorage.getItem("last_order"));
+if (!order) location.href = "../index.html";
 
-/* ================= CONFIG ================= */
-const BASE_URL = window.APP_CONFIG.API_BASE;
-const API_ORDERS = BASE_URL + "/api/orders";
+document.getElementById("orderId").textContent = order.id;
+document.getElementById("orderTotal").textContent = order.total;
 
-/* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("user_id");
-const ORDER_ID = localStorage.getItem("last_order_id");
-
-if (!USER_ID || !ORDER_ID) {
-  location.href = "../index.html";
-}
-
-/* ================= ELEMENTS ================= */
-const orderIdEl = document.getElementById("orderId");
-const orderTotalEl = document.getElementById("orderTotal");
-const itemsBox = document.getElementById("orderItems");
-
-/* ================= LOAD ORDER ================= */
-fetch(`${API_ORDERS}/${ORDER_ID}`, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(res => res.json())
-.then(order => {
-  // Display order details
-  orderIdEl.textContent = order.id;
-  orderTotalEl.textContent = Number(order.total).toLocaleString("en-IN");
-
-  itemsBox.innerHTML = "";
-  order.items.forEach(item => {
-    const itemTotal = item.price * item.qty;
-    itemsBox.innerHTML += `
-      <div class="item">
-        <div>${item.name} × ${item.qty}</div>
-        <div>₹${itemTotal.toLocaleString("en-IN")}</div>
-      </div>
-    `;
-  });
-
-  // Clear cart and remove last order id after showing
-  localStorage.removeItem("cart");
-  setTimeout(() => {
-    localStorage.removeItem("last_order_id");
-  }, 5000);
-})
-.catch(() => {
-  alert("Failed to load order details");
-  location.href = "../index.html";
+const box = document.getElementById("orderItems");
+order.items.forEach(i => {
+  box.innerHTML += `
+    <div class="item">
+      <span>${i.name} × ${i.quantity}</span>
+      <span>₹${i.price * i.quantity}</span>
+    </div>`;
 });
 
-/* ================= PLACE ORDER (example) ================= */
-/* 
-  Example fetch to place order from cart:
-  This part goes in your checkout page, not success.html
-*/
-function placeOrder(cartItems) {
-  fetch(`${API_ORDERS}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": USER_ID
-    },
-    body: JSON.stringify({ items: cartItems })
-  })
-  .then(res => res.json())
-  .then(data => {
-    // Save last order id
-    localStorage.setItem("last_order_id", data.id);
-    // Clear cart
-    localStorage.removeItem("cart");
-    // Redirect to success page
-    location.href = "success.html";
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to place order");
-  });
-}
+setTimeout(() => localStorage.removeItem("last_order"), 5000);
 </script>
 
 </body>
