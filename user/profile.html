@@ -249,15 +249,20 @@ const saveBtn = document.getElementById("saveBtn");
 /* ================= USER ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
-  alert("User not initialized");
+  alert("Please login first");
   location.href = "../index.html";
 }
 
 /* ================= LOAD PROFILE ================= */
-fetch(API_USERS, {
-  headers: { "x-user-id": USER_ID }
+fetch(`${API_USERS}/${USER_ID}`, {
+  headers: {
+    "x-user-id": USER_ID
+  }
 })
-.then(res => res.json())
+.then(res => {
+  if (!res.ok) throw new Error("Profile fetch failed");
+  return res.json();
+})
 .then(user => {
   nameI.value = user.name || "";
   phoneI.value = user.phone || "";
@@ -270,12 +275,16 @@ fetch(API_USERS, {
     avatar.hidden = true;
   }
 })
-.catch(() => alert("Failed to load profile"));
+.catch(err => {
+  console.error(err);
+  alert("Failed to load profile");
+});
 
 /* ================= SAVE PROFILE ================= */
-saveBtn.onclick = () => {
+saveBtn.addEventListener("click", () => {
+
   if (!nameI.value || !phoneI.value || !addressI.value) {
-    alert("Please complete all required fields");
+    alert("Please fill all required fields");
     return;
   }
 
@@ -288,20 +297,26 @@ saveBtn.onclick = () => {
     body: JSON.stringify({
       name: nameI.value,
       phone: phoneI.value,
-      altPhone: altPhoneI.value,
+      alt_phone: altPhoneI.value,
       address: addressI.value
     })
   })
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error("Save failed");
+    return res.json();
+  })
   .then(() => {
     localStorage.setItem("profile_completed", "true");
     alert("Profile saved successfully ✅");
   })
-  .catch(() => alert("Failed to save profile"));
-};
+  .catch(err => {
+    console.error(err);
+    alert("Failed to save profile");
+  });
+});
 
 /* ================= LOGOUT ================= */
-function logout(){
+function logout() {
   localStorage.clear();
   location.href = "../index.html";
 }
