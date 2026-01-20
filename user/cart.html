@@ -169,13 +169,16 @@ header h2{
 
 <div class="container" id="cartBox"></div>
 
+<script src="../config.js"></script>
 <script>
 "use strict";
 
+const API = window.APP_CONFIG.API_BASE;
 const FALLBACK = "https://via.placeholder.com/150";
+const CART_KEY = "jd_cart";
 
 /* ================= STATE ================= */
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 const cartBox = document.getElementById("cartBox");
 
 /* ================= RENDER CART ================= */
@@ -191,9 +194,9 @@ function renderCart(){
   cart.forEach((item, index) => {
     total += item.price * item.qty;
 
-    cartBox.innerHTML += `
+    cartBox.insertAdjacentHTML("beforeend", `
       <div class="cart-item">
-        <img src="${item.image || FALLBACK}">
+        <img src="${item.image ? API + item.image : FALLBACK}">
         <div class="item-info">
           <h4>${item.name}</h4>
           <p>₹${item.price}</p>
@@ -209,15 +212,15 @@ function renderCart(){
           Remove
         </button>
       </div>
-    `;
+    `);
   });
 
-  cartBox.innerHTML += `
+  cartBox.insertAdjacentHTML("beforeend", `
     <div class="cart-summary">
       <strong>Total: ₹${total}</strong>
       <button class="btn btn-primary">Checkout</button>
     </div>
-  `;
+  `);
 }
 
 /* ================= ACTIONS ================= */
@@ -233,13 +236,14 @@ function removeItem(i){
 }
 
 function save(){
-  localStorage.setItem("cart", JSON.stringify(cart));
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
   renderCart();
 }
 
 /* INIT */
 renderCart();
 </script>
+
 
 </body>
 </html>
