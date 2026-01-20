@@ -178,7 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
     window.APP_CONFIG?.API_BASE ||
     "https://jd-backend-production.up.railway.app";
 
-  // ✅ CORRECT ENDPOINTS
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
@@ -208,30 +207,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  /* ================= LOAD USER PROFILE ================= */
-  fetch(API_PROFILE, {
-    headers: {
-      "x-user-id": USER_ID
-    }
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Profile fetch failed");
-    return res.json();
-  })
-  .then(user => {
-    nameInput.value  = user.name || "";
-    phoneInput.value = user.phone || "";
+  /* ================= LOAD USER (🔥 FIXED) ================= */
+  fetch(`${API_PROFILE}?userId=${USER_ID}`)
+    .then(res => {
+      if (!res.ok) throw new Error("Profile fetch failed");
+      return res.json();
+    })
+    .then(user => {
+      nameInput.value  = user.name || "";
+      phoneInput.value = user.phone || "";
 
-    addressList.innerHTML = `
-      <div class="address-card">
-        📍 ${user.address || "Address not provided"}
-      </div>
-    `;
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load user data");
-  });
+      addressList.innerHTML = `
+        <div class="address-card">
+          📍 ${user.address || "Address not provided"}
+        </div>
+      `;
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to load user data");
+    });
 
   /* ================= ORDER SUMMARY ================= */
   let total = 0;
@@ -263,10 +258,11 @@ document.addEventListener("DOMContentLoaded", () => {
     orderBtn.textContent = "Placing Order...";
 
     const orderData = {
-      items: cart.map(item => ({
-        name: item.name,
-        price: item.price,
-        quantity: item.qty
+      userId: USER_ID,
+      items: cart.map(i => ({
+        name: i.name,
+        price: i.price,
+        quantity: i.qty
       })),
       total
     };
@@ -274,8 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(API_ORDERS, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-user-id": USER_ID
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(orderData)
     })
@@ -287,8 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
     })
-    .catch(err => {
-      console.error(err);
+    .catch(() => {
       alert("Order failed. Try again.");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
@@ -297,7 +291,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
-
 
 </body>
 </html>
