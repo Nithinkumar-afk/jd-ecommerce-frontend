@@ -165,12 +165,21 @@ input{
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  const BASE_URL   = window.APP_CONFIG.API_BASE;
+  /* ================= CONFIG ================= */
+  const BASE_URL    = window.APP_CONFIG.API_BASE;
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
-  
+  /* ================= USER (NO LOGIN) ================= */
+  const USER_ID =
+    localStorage.getItem("jd_user_id") ||
+    (() => {
+      const id = "guest_" + Date.now();
+      localStorage.setItem("jd_user_id", id);
+      return id;
+    })();
 
+  /* ================= CART ================= */
   const CART_KEY = "jd_cart";
   const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
@@ -180,6 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  /* ================= ELEMENTS ================= */
   const nameInput   = document.getElementById("name");
   const phoneInput  = document.getElementById("phone");
   const addressList = document.getElementById("addressList");
@@ -192,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch(API_PROFILE, {
     headers: { "x-user-id": USER_ID }
   })
-  .then(r => r.json())
+  .then(r => r.ok ? r.json() : {})
   .then(u => {
     nameInput.value  = u.name || "";
     phoneInput.value = u.phone || "";
@@ -203,9 +213,16 @@ document.addEventListener("DOMContentLoaded", () => {
         📍 ${userAddress || "Address not provided"}
       </div>
     `;
+  })
+  .catch(() => {
+    addressList.innerHTML = `
+      <div class="address-card">
+        📍 Address not provided
+      </div>
+    `;
   });
 
-  /* ================= SUMMARY ================= */
+  /* ================= ORDER SUMMARY ================= */
   let total = 0;
   summaryBox.innerHTML = "";
 
@@ -213,20 +230,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const t = Number(i.price) * Number(i.qty);
     total += t;
 
-    summaryBox.innerHTML += `
+    summaryBox.insertAdjacentHTML("beforeend", `
       <div class="summary-item">
         <span>${i.name} × ${i.qty}</span>
         <span>₹${t}</span>
       </div>
-    `;
+    `);
   });
 
-  summaryBox.innerHTML += `
+  summaryBox.insertAdjacentHTML("beforeend", `
     <div class="summary-total">
       <strong>Total</strong>
       <strong>₹${total}</strong>
     </div>
-  `;
+  `);
 
   /* ================= PLACE ORDER ================= */
   orderBtn.onclick = async () => {
@@ -242,14 +259,12 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const payload = {
         items: cart.map(i => ({
-          name: i.name,                 // ✅ REQUIRED
-          price: Number(i.price),       // ✅ REQUIRED
-          qty: Number(i.qty)            // ✅ REQUIRED
+          name: i.name,
+          price: Number(i.price),
+          qty: Number(i.qty)
         })),
         total: Number(total)
       };
-
-      console.log("ORDER PAYLOAD:", payload);
 
       const res = await fetch(API_ORDERS, {
         method: "POST",
@@ -267,8 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
       location.href = "success.html";
 
     } catch (err) {
-      console.error("ORDER ERROR:", err);
-      alert(err.error || "Failed to place order");
+      alert(err?.error || "Failed to place order");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
     }
