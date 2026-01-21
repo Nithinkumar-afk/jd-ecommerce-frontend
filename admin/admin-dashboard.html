@@ -175,13 +175,6 @@ window.addEventListener("load",()=>{
 
 /* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
-const ADMIN_KEY = localStorage.getItem("ADMIN_API_KEY");
-
-/* SECURITY CHECK */
-if(!ADMIN_KEY){
-  alert("Admin login required");
-  location.href = "../index.html";
-}
 
 /* HELPERS */
 function formatMoney(n){
@@ -189,19 +182,8 @@ function formatMoney(n){
 }
 
 async function apiFetch(url){
-  const res = await fetch(url,{
-    headers:{
-      "x-api-key": ADMIN_KEY
-    }
-  });
-
-  if(res.status === 401){
-    alert("Session expired. Please login again.");
-    localStorage.removeItem("ADMIN_API_KEY");
-    location.href = "../index.html";
-    throw new Error("Unauthorized");
-  }
-
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Failed");
   return res.json();
 }
 
@@ -220,9 +202,11 @@ async function loadDashboard(){
     const users = await apiFetch(API + "/api/users");
     totalUsersEl.textContent = users.length || 0;
 
-    const stats = await apiFetch(API + "/api/orders/admin");
-    totalOrdersEl.textContent = stats.totalOrders || 0;
-    totalRevenueEl.textContent = formatMoney(stats.totalRevenue);
+    const orders = await apiFetch(API + "/api/orders/admin");
+    totalOrdersEl.textContent = orders.length || 0;
+
+    const revenue = orders.reduce((s,o)=>s+Number(o.total||0),0);
+    totalRevenueEl.textContent = formatMoney(revenue);
 
   }catch(err){
     console.error("Dashboard error:", err);
@@ -231,6 +215,7 @@ async function loadDashboard(){
 
 loadDashboard();
 </script>
+
 
 </body>
 </html>

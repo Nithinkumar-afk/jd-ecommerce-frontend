@@ -149,58 +149,48 @@ header a{
 <script>
 "use strict";
 
-/* ================= PAGE LOAD ================= */
+/* PAGE LOAD */
 window.addEventListener("load",()=>{
   document.body.classList.add("loaded");
 });
 
-/* ================= CONFIG ================= */
+/* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
-const ADMIN_KEY = localStorage.getItem("ADMIN_API_KEY");
 
-/* ================= SECURITY ================= */
-if(!ADMIN_KEY){
-  alert("Admin login required");
-  location.href = "../index.html";
-}
-
-/* ================= FETCH HELPER ================= */
+/* SIMPLE FETCH */
 async function apiFetch(url, options = {}){
   const res = await fetch(url, {
     ...options,
     headers:{
-      "x-api-key": ADMIN_KEY,
       "Content-Type":"application/json",
       ...(options.headers || {})
     }
   });
 
-  if(res.status === 401){
-    alert("Session expired");
-    localStorage.removeItem("ADMIN_API_KEY");
-    location.href = "../index.html";
-    throw new Error("Unauthorized");
+  if(!res.ok){
+    throw new Error("Request failed");
   }
 
   return res.json();
 }
 
-/* ================= STATE ================= */
+/* STATE */
 let allOrders = [];
 let currentFilter = "ALL";
 
-/* ================= LOAD ORDERS ================= */
+/* LOAD ORDERS */
 async function loadOrders(){
   try{
     allOrders = await apiFetch(API + "/api/orders/admin");
     renderOrders();
-  }catch{
+  }catch(err){
+    console.error(err);
     document.getElementById("orders").innerHTML =
       "<p style='color:red'>Error loading orders</p>";
   }
 }
 
-/* ================= FILTER ================= */
+/* FILTER */
 function setFilter(status, btn){
   currentFilter = status;
   document.querySelectorAll(".filters button")
@@ -209,7 +199,7 @@ function setFilter(status, btn){
   renderOrders();
 }
 
-/* ================= UPDATE STATUS ================= */
+/* UPDATE STATUS */
 async function updateStatus(id, status){
   try{
     await apiFetch(`${API}/api/orders/${id}/status`, {
@@ -222,7 +212,7 @@ async function updateStatus(id, status){
   }
 }
 
-/* ================= DELETE ================= */
+/* DELETE ORDER */
 async function deleteOrder(id){
   if(!confirm("Delete this order?")) return;
 
@@ -236,7 +226,7 @@ async function deleteOrder(id){
   }
 }
 
-/* ================= RENDER ================= */
+/* RENDER */
 function renderOrders(){
   const div = document.getElementById("orders");
   div.innerHTML = "";
@@ -268,27 +258,23 @@ function renderOrders(){
         </div>
 
         <div class="actions">
-          <button class="ship"
-            onclick="updateStatus(${o.id},'SHIPPED')"
+          <button onclick="updateStatus(${o.id},'SHIPPED')"
             ${o.status!=="PLACED"?"disabled":""}>Ship</button>
 
-          <button class="deliver"
-            onclick="updateStatus(${o.id},'DELIVERED')"
+          <button onclick="updateStatus(${o.id},'DELIVERED')"
             ${o.status!=="SHIPPED"?"disabled":""}>Deliver</button>
 
-          <button class="cancel"
-            onclick="updateStatus(${o.id},'CANCELLED')"
+          <button onclick="updateStatus(${o.id},'CANCELLED')"
             ${o.status==="DELIVERED"?"disabled":""}>Cancel</button>
 
-          <button class="delete"
-            onclick="deleteOrder(${o.id})">Delete</button>
+          <button onclick="deleteOrder(${o.id})">Delete</button>
         </div>
       </div>
     `;
   });
 }
 
-/* ================= INIT ================= */
+/* INIT */
 loadOrders();
 </script>
 
