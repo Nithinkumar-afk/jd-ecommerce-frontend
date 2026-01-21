@@ -156,6 +156,11 @@ textarea{resize:vertical}
   <input id="name" placeholder="Product name *">
   <input id="price" type="number" placeholder="Price *">
   <input id="image" type="file" accept="image/*">
+
+  <!-- ADDED (NO REMOVAL) -->
+  <input id="image2" type="file" accept="image/*">
+  <input id="image3" type="file" accept="image/*">
+
   <textarea id="desc" rows="3" placeholder="Description (optional)"></textarea>
   <button id="addBtn">Add Product</button>
 </div>
@@ -188,6 +193,8 @@ const list = document.getElementById("list");
 const nameEl = document.getElementById("name");
 const priceEl = document.getElementById("price");
 const imageEl = document.getElementById("image");
+const image2El = document.getElementById("image2");
+const image3El = document.getElementById("image3");
 const descEl  = document.getElementById("desc");
 const addBtn  = document.getElementById("addBtn");
 
@@ -258,6 +265,8 @@ addBtn.onclick = async ()=>{
   form.append("price", priceEl.value);
   form.append("description", descEl.value.trim());
   if(imageEl.files[0]) form.append("image", imageEl.files[0]);
+  if(image2El.files[0]) form.append("image2", image2El.files[0]);
+  if(image3El.files[0]) form.append("image3", image3El.files[0]);
 
   try{
     const res = await fetch(API,{
@@ -271,6 +280,8 @@ addBtn.onclick = async ()=>{
     priceEl.value="";
     descEl.value="";
     imageEl.value="";
+    image2El.value="";
+    image3El.value="";
 
     await loadProducts();
     alert("Product added successfully ✅");
