@@ -82,7 +82,6 @@ body{
   </div>
 </div>
 
-<script src="../config.js"></script>
 <script>
 "use strict";
 
@@ -90,42 +89,51 @@ const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_ORDERS = BASE_URL + "/api/orders";
 
 const USER_ID = localStorage.getItem("jd_user_id");
-const ORDER_ID = localStorage.getItem("last_order_id");
-
-if (!USER_ID || !ORDER_ID) {
+if (!USER_ID) {
+  alert("Please login");
   location.href = "../index.html";
 }
 
-fetch(`${API_ORDERS}/${ORDER_ID}`, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Failed to load order");
-  return res.json();
-})
-.then(order => {
-  document.getElementById("orderId").textContent = order.id;
-  document.getElementById("orderTotal").textContent =
-    Number(order.total_amount).toLocaleString("en-IN");
+const CART_KEY = "jd_cart";
+const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-  const box = document.getElementById("orderItems");
-  box.innerHTML = "";
-
-  order.items.forEach(i => {
-    box.innerHTML += `
-      <div class="item">
-        <span>${i.name} × ${i.quantity}</span>
-        <span>₹${(i.price * i.quantity).toLocaleString("en-IN")}</span>
-      </div>`;
-  });
-
-  setTimeout(() => localStorage.removeItem("last_order_id"), 5000);
-})
-.catch(err => {
-  console.error(err);
-  alert("Failed to load order details");
+if (cart.length === 0) {
+  alert("Cart is empty");
   location.href = "../index.html";
-});
+}
+
+const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+document.getElementById("orderBtn").onclick = () => {
+  fetch(API_ORDERS, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": USER_ID
+    },
+    body: JSON.stringify({
+      items: cart.map(i => ({
+        product_id: i.id,
+        price: Number(i.price),
+        quantity: Number(i.qty)
+      })),
+      total: Number(total)
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Order failed");
+    return res.json();
+  })
+  .then(data => {
+    localStorage.setItem("last_order_id", data.orderId);
+    localStorage.removeItem(CART_KEY);
+    location.href = "success.html";
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Order failed");
+  });
+};
 </script>
 
 </body>
