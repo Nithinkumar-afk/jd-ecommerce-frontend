@@ -195,24 +195,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* LOAD PROFILE */
   fetch(API_PROFILE, { headers:{ "x-user-id": USER_ID }})
-  .then(r=>r.json())
-  .then(u=>{
-    nameInput.value = u.name || "";
-    phoneInput.value = u.phone || "";
-    userAddress = u.address || "";
+    .then(r => r.json())
+    .then(u => {
+      nameInput.value  = u.name || "";
+      phoneInput.value = u.phone || "";
+      userAddress      = u.address || "";
 
-    addressList.innerHTML = `
-      <div class="address-card">
-        📍 ${userAddress || "Address not provided"}
-      </div>
-    `;
-  });
+      addressList.innerHTML = `
+        <div class="address-card">
+          📍 ${userAddress || "Address not provided"}
+        </div>
+      `;
+    });
 
   /* SUMMARY */
   let total = 0;
-  cart.forEach(i=>{
+  cart.forEach(i => {
     const t = i.price * i.qty;
     total += t;
+
     summaryBox.innerHTML += `
       <div class="summary-item">
         <span>${i.name} × ${i.qty}</span>
@@ -228,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   `;
 
-  /* PLACE ORDER */
+  /* ✅ FIXED PLACE ORDER */
   orderBtn.onclick = async () => {
 
     if (!userAddress) {
@@ -240,29 +241,31 @@ document.addEventListener("DOMContentLoaded", () => {
     orderBtn.textContent = "Placing Order...";
 
     try {
-      const res = await fetch(API_ORDERS,{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
+      const res = await fetch(API_ORDERS, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
           "x-user-id": USER_ID
         },
-        body:JSON.stringify({
-          items: cart.map(i=>({
-            product_id: i.id,   // ✅ FIXED
-            price: i.price,
-            quantity: i.qty
+        body: JSON.stringify({
+          items: cart.map(i => ({
+            product_id: i.product_id || i.id, // ✅ SAFE
+            price: Number(i.price),
+            quantity: Number(i.qty)
           })),
-          total
+          total: Number(total)
         })
       });
 
-      if(!res.ok) throw new Error();
+      const data = await res.json();
+      if (!res.ok) throw data;
 
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
 
-    } catch {
-      alert("Order failed");
+    } catch (err) {
+      console.error("ORDER ERROR:", err);
+      alert(err.error || "Order failed");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
     }

@@ -142,14 +142,8 @@ header button{
 
 /* ================= TABLET ================= */
 @media (max-width:768px){
-  header{
-    padding:12px 16px;
-  }
-
-  #orders{
-    padding:20px 16px;
-  }
-
+  header{padding:12px 16px}
+  #orders{padding:20px 16px}
   .order-head{
     flex-direction:column;
     align-items:flex-start;
@@ -158,38 +152,16 @@ header button{
 
 /* ================= MOBILE ================= */
 @media (max-width:480px){
-  .logo{
-    font-size:18px;
-  }
-
+  .logo{font-size:18px}
   header button{
     font-size:16px;
     padding:6px 12px;
   }
-
   .status{
     font-size:10px;
     padding:5px 12px;
   }
-
-  .order{
-    padding:16px;
-  }
-}
-
-/* ================= SMALL MOBILE ================= */
-@media (max-width:360px){
-  .order-id{
-    font-size:12px;
-  }
-
-  .item-info h4{
-    font-size:13px;
-  }
-
-  .item-info p{
-    font-size:12px;
-  }
+  .order{padding:16px}
 }
 </style>
 </head>
@@ -211,8 +183,8 @@ header button{
 const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_ORDERS = BASE_URL + "/api/orders";
 
-/* ================= AUTH ================= */
-const USER_ID = localStorage.getItem("user_id");
+/* ✅ FIXED AUTH (MATCHES CHECKOUT) */
+const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
   location.href = "../index.html";
 }
@@ -239,8 +211,7 @@ async function loadOrders(){
 
     list.forEach(o => {
 
-      const statusText = o.status || "PLACED";
-      const statusClass = statusText.toLowerCase();
+      const statusText = o.status || "Placed";
 
       const itemsHtml = o.items.map(i => `
         <div class="item">
@@ -255,7 +226,7 @@ async function loadOrders(){
         <div class="order">
           <div class="order-head">
             <div class="order-id">Order #${o.id}</div>
-            <div class="status ${statusClass}">
+            <div class="status ${statusText}">
               ${statusText}
             </div>
           </div>
@@ -270,6 +241,7 @@ async function loadOrders(){
     });
 
   } catch (err) {
+    console.error(err);
     ordersDiv.innerHTML =
       "<p class='empty'>Failed to load orders</p>";
   }
@@ -278,7 +250,6 @@ async function loadOrders(){
 /* ================= INIT ================= */
 loadOrders();
 </script>
-
 
 </body>
 </html>
