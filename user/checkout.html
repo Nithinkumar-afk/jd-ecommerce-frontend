@@ -1,94 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Checkout | JD Store</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --glass:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.12);
+  --primary:#4da3ff;
+  --primary2:#2b6df6;
+  --success:#22c55e;
+}
+
 body{
-  margin:0;
   font-family:Poppins,sans-serif;
   background:radial-gradient(circle at top,#0b0b0b,#000);
   color:#fff;
+  min-height:100vh;
 }
 
-.container{
-  max-width:900px;
-  margin:40px auto;
-  padding:20px;
-}
-
-.card{
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:20px;
-  padding:24px;
-  margin-bottom:24px;
-}
-
-h2{margin-bottom:16px}
-
-input, textarea{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:none;
-  margin-bottom:14px;
-  font-family:inherit;
-}
-
-textarea{resize:none}
-
-.cart-item{
+/* HEADER */
+header{
   display:flex;
-  justify-content:space-between;
-  margin-bottom:10px;
+  align-items:center;
+  padding:14px 20px;
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(14px);
+  position:sticky;
+  top:0;
 }
 
-.total{
-  font-size:18px;
+header h2{
+  font-size:16px;
+  font-weight:500;
+  color:var(--primary);
+  cursor:pointer;
+}
+
+/* LAYOUT */
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:24px;
+  display:grid;
+  grid-template-columns:1.6fr 1fr;
+  gap:22px;
+}
+
+/* CARD */
+.card{
+  background:#0f0f0f;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px;
+}
+
+.card h3{
+  font-size:16px;
+  margin-bottom:16px;
+}
+
+/* FORM */
+label{
+  font-size:12px;
+  opacity:.7;
+  margin-bottom:6px;
+  display:block;
+}
+
+input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  margin-bottom:14px;
+  background:var(--glass);
+  color:white;
+  outline:none;
+}
+
+/* ADDRESS */
+.address-card{
+  padding:14px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:var(--glass);
+  font-size:14px;
+  margin-bottom:12px;
+}
+
+/* BUTTON */
+.place-order{
+  width:100%;
+  padding:14px;
+  border-radius:16px;
+  border:none;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:white;
   font-weight:600;
+  cursor:pointer;
   margin-top:12px;
 }
 
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:14px;
-  background:linear-gradient(135deg,#4da3ff,#2563eb);
-  color:#fff;
-  font-size:16px;
-  cursor:pointer;
+/* SUMMARY */
+.summary-item{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:10px;
+  font-size:14px;
 }
-button:disabled{opacity:.6}
+
+.summary-total{
+  display:flex;
+  justify-content:space-between;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px dashed var(--border);
+  font-weight:600;
+  color:var(--success);
+}
+
+/* RESPONSIVE */
+@media(max-width:1024px){
+  .container{grid-template-columns:1fr}
+}
 </style>
 </head>
 
 <body>
 
+<header>
+  <h2 onclick="location.href='cart.html'">← Back to Cart</h2>
+</header>
+
 <div class="container">
 
-  <!-- ADDRESS -->
+  <!-- CUSTOMER -->
   <div class="card">
-    <h2>Delivery Details</h2>
-    <input id="name" placeholder="Full Name">
-    <input id="phone" placeholder="Phone Number">
-    <textarea id="address" rows="3" placeholder="Delivery Address"></textarea>
+    <h3>Customer Details</h3>
+
+    <label>Name</label>
+    <input id="name" disabled>
+
+    <label>Phone</label>
+    <input id="phone" disabled>
+
+    <h3>Address</h3>
+    <div id="addressList"></div>
+
+    <button class="place-order" id="orderBtn">
+      Place Order
+    </button>
   </div>
 
-  <!-- ORDER SUMMARY -->
+  <!-- SUMMARY -->
   <div class="card">
-    <h2>Order Summary</h2>
-    <div id="orderItems"></div>
-    <div class="total" id="orderTotal"></div>
+    <h3>Order Summary</h3>
+    <div id="summary"></div>
   </div>
-
-  <!-- PLACE ORDER -->
-  <button id="placeOrderBtn">Place Order</button>
 
 </div>
 
@@ -96,100 +171,133 @@ button:disabled{opacity:.6}
 <script>
 "use strict";
 
-/* ================= CONFIG ================= */
-const API_BASE = window.APP_CONFIG.API_BASE;
-const API_ORDERS = API_BASE + "/api/orders";
-const API_PROFILE = API_BASE + "/api/profile";
+document.addEventListener("DOMContentLoaded", () => {
 
-/* ================= USER ================= */
-const USER_ID = localStorage.getItem("jd_user_id");
-if (!USER_ID) {
-  alert("Please login first");
-  location.href = "../index.html";
-}
+  /* ================= CONFIG ================= */
+  const BASE_URL =
+    window.APP_CONFIG?.API_BASE ||
+    "https://jd-backend-production.up.railway.app";
 
-/* ================= CART ================= */
-const CART_KEY = "jd_cart";
-const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
-if (cart.length === 0) {
-  alert("Cart is empty");
-  location.href = "../index.html";
-}
+  // ✅ CORRECT ENDPOINTS
+  const API_PROFILE = BASE_URL + "/api/profile";
+  const API_ORDERS  = BASE_URL + "/api/orders";
 
-/* ================= ELEMENTS ================= */
-const nameI = document.getElementById("name");
-const phoneI = document.getElementById("phone");
-const addressI = document.getElementById("address");
-const itemsBox = document.getElementById("orderItems");
-const totalBox = document.getElementById("orderTotal");
-const btn = document.getElementById("placeOrderBtn");
+  /* ================= AUTH ================= */
+  const USER_ID = localStorage.getItem("jd_user_id");
 
-/* ================= LOAD PROFILE ================= */
-fetch(API_PROFILE, {
-  headers:{ "x-user-id": USER_ID }
-})
-.then(r=>r.json())
-.then(u=>{
-  nameI.value = u.name || "";
-  phoneI.value = u.phone || "";
-  addressI.value = u.address || "";
-});
-
-/* ================= RENDER SUMMARY ================= */
-let total = 0;
-cart.forEach(i=>{
-  total += i.price * i.qty;
-  itemsBox.innerHTML += `
-    <div class="cart-item">
-      <span>${i.name} × ${i.qty}</span>
-      <span>₹${(i.price * i.qty).toLocaleString("en-IN")}</span>
-    </div>`;
-});
-totalBox.textContent = "Total: ₹" + total.toLocaleString("en-IN");
-
-/* ================= PLACE ORDER ================= */
-btn.onclick = async () => {
-
-  if (!nameI.value || !phoneI.value || !addressI.value) {
-    alert("Please fill all delivery details");
+  if (!USER_ID) {
+    alert("Please login to continue");
+    location.href = "../index.html";
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = "Placing order...";
+  /* ================= CART ================= */
+  const CART_KEY = "jd_cart";
+  const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-  try {
-    const res = await fetch(API_ORDERS, {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
+  if (cart.length === 0) {
+    alert("Your cart is empty");
+    location.href = "cart.html";
+    return;
+  }
+
+  /* ================= ELEMENTS ================= */
+  const nameInput   = document.getElementById("name");
+  const phoneInput  = document.getElementById("phone");
+  const addressList = document.getElementById("addressList");
+  const summaryBox  = document.getElementById("summary");
+  const orderBtn    = document.getElementById("orderBtn");
+
+  /* ================= LOAD USER PROFILE ================= */
+  fetch(API_PROFILE, {
+    headers: {
+      "x-user-id": USER_ID
+    }
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("Profile fetch failed");
+    return res.json();
+  })
+  .then(user => {
+    nameInput.value  = user.name || "";
+    phoneInput.value = user.phone || "";
+
+    addressList.innerHTML = `
+      <div class="address-card">
+        📍 ${user.address || "Address not provided"}
+      </div>
+    `;
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to load user data");
+  });
+
+  /* ================= ORDER SUMMARY ================= */
+  let total = 0;
+  summaryBox.innerHTML = "";
+
+  cart.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    total += itemTotal;
+
+    summaryBox.insertAdjacentHTML("beforeend", `
+      <div class="summary-item">
+        <span>${item.name} × ${item.qty}</span>
+        <span>₹${itemTotal}</span>
+      </div>
+    `);
+  });
+
+  summaryBox.insertAdjacentHTML("beforeend", `
+    <div class="summary-total">
+      <strong>Total</strong>
+      <strong>₹${total}</strong>
+    </div>
+  `);
+
+  /* ================= PLACE ORDER ================= */
+  orderBtn.addEventListener("click", () => {
+
+    orderBtn.disabled = true;
+    orderBtn.textContent = "Placing Order...";
+
+    const orderData = {
+      items: cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.qty
+      })),
+      total
+    };
+
+    fetch(API_ORDERS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
         "x-user-id": USER_ID
       },
-      body:JSON.stringify({
-        items: cart.map(i=>({
-          product_id: i.id,
-          price: i.price,
-          quantity: i.qty
-        })),
-        total
-      })
+      body: JSON.stringify(orderData)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Order failed");
+      return res.json();
+    })
+    .then(() => {
+      localStorage.removeItem(CART_KEY);
+      location.href = "success.html";
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Order failed. Try again.");
+      orderBtn.disabled = false;
+      orderBtn.textContent = "Place Order";
     });
+  });
 
-    if(!res.ok) throw new Error();
-
-    const data = await res.json();
-    localStorage.setItem("last_order_id", data.orderId);
-    localStorage.removeItem(CART_KEY);
-
-    location.href = "success.html";
-
-  } catch {
-    alert("Order failed");
-    btn.disabled = false;
-    btn.textContent = "Place Order";
-  }
-};
+});
 </script>
+
 
 </body>
 </html>
