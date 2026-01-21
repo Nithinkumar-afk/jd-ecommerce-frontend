@@ -273,15 +273,6 @@ fill="url(#jdGrad)" stroke="white" stroke-width="16"/>
 </div>
 </div>
 
-<script>
-/* SPLASH CONTROL */
-window.addEventListener("load",()=>{
-  setTimeout(()=>{
-    splash.classList.add("hide");
-    app.classList.add("show");
-  },2500);
-});
-</script>
 
 <script>
 "use strict";
@@ -422,6 +413,15 @@ function closeModal(){ modal.style.display="none"; }
 modal.onclick = e => { if(e.target===modal) closeModal(); };
 
 search.oninput = renderProducts;
+
+/* SPLASH CONTROL */
+window.addEventListener("load",()=>{
+  setTimeout(()=>{
+    splash.classList.add("hide");
+    app.classList.add("show");
+  },2500);
+});
+
 </script>
 
 </body>
