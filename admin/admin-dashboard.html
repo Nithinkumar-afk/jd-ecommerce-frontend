@@ -28,7 +28,6 @@ body{
 
 body.loaded{opacity:1}
 
-/* HEADER */
 header{
   padding:16px 24px;
   background:var(--glass);
@@ -169,17 +168,41 @@ header a{
 <script>
 "use strict";
 
-/* PAGE FADE IN */
+/* FADE IN */
 window.addEventListener("load",()=>{
   document.body.classList.add("loaded");
 });
 
 /* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
+const ADMIN_KEY = localStorage.getItem("ADMIN_API_KEY");
+
+/* SECURITY CHECK */
+if(!ADMIN_KEY){
+  alert("Admin login required");
+  location.href = "../index.html";
+}
 
 /* HELPERS */
 function formatMoney(n){
   return "₹" + Number(n || 0).toLocaleString("en-IN");
+}
+
+async function apiFetch(url){
+  const res = await fetch(url,{
+    headers:{
+      "x-api-key": ADMIN_KEY
+    }
+  });
+
+  if(res.status === 401){
+    alert("Session expired. Please login again.");
+    localStorage.removeItem("ADMIN_API_KEY");
+    location.href = "../index.html";
+    throw new Error("Unauthorized");
+  }
+
+  return res.json();
 }
 
 /* ELEMENTS */
@@ -191,19 +214,18 @@ const totalRevenueEl = document.getElementById("totalRevenue");
 /* LOAD DASHBOARD */
 async function loadDashboard(){
   try{
-    const products = await fetch(API + "/api/products").then(r=>r.json());
+    const products = await apiFetch(API + "/api/products");
     totalProductsEl.textContent = products.length || 0;
 
-    const users = await fetch(API + "/api/users").then(r=>r.json());
+    const users = await apiFetch(API + "/api/users");
     totalUsersEl.textContent = users.length || 0;
 
-    const stats = await fetch(API + "/api/orders/admin").then(r=>r.json());
+    const stats = await apiFetch(API + "/api/orders/admin");
     totalOrdersEl.textContent = stats.totalOrders || 0;
     totalRevenueEl.textContent = formatMoney(stats.totalRevenue);
 
   }catch(err){
     console.error("Dashboard error:", err);
-    alert("Failed to load dashboard data");
   }
 }
 
