@@ -197,11 +197,16 @@ async function loadDashboard(){
     const products = await productsRes.json();
     document.getElementById("totalProducts").innerText = products.length || 0;
 
-    /* REVENUE */
+    /* ✅ FIXED REVENUE */
     const ordersRes = await fetch(API + "/api/orders/admin");
     const orders = await ordersRes.json();
-    const revenue = orders.reduce((s,o)=>s + Number(o.total || 0), 0);
-    document.getElementById("totalRevenue").innerText = formatMoney(revenue);
+    const revenue = orders.reduce(
+      (sum, o) => sum + Number(o.total_amount || 0),
+      0
+    );
+
+    document.getElementById("totalRevenue").innerText =
+      formatMoney(revenue);
 
   }catch(err){
     console.error("DASHBOARD ERROR:", err);
