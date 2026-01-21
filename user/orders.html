@@ -62,11 +62,12 @@ header button{
 
 /* ================= ORDER CARD ================= */
 .order{
-  background:#0f0f0f;
+  background:linear-gradient(180deg,#101010,#0a0a0a);
   border:1px solid var(--border);
   border-radius:22px;
   padding:20px;
   margin-bottom:22px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
 }
 
 .order-head{
@@ -82,40 +83,56 @@ header button{
   color:#cbd5f5;
 }
 
-/* ================= STATUS ================= */
+/* ================= STATUS (COLOR GRADED) ================= */
 .status{
   font-size:11px;
   font-weight:600;
-  padding:6px 14px;
+  padding:7px 16px;
   border-radius:999px;
   text-transform:uppercase;
+  letter-spacing:.4px;
   white-space:nowrap;
 }
 
-.status.Placed{background:#ffedd5;color:#c2410c}
-.status.Shipped{background:#dbeafe;color:#1d4ed8}
-.status.Delivered{background:#dcfce7;color:#166534}
-.status.Cancelled{background:#fee2e2;color:#991b1b}
+/* Placed → Orange */
+.status.Placed{
+  background:linear-gradient(135deg,#ffedd5,#fed7aa);
+  color:#9a3412;
+  box-shadow:0 0 0 1px rgba(234,88,12,.35) inset;
+}
+
+/* Shipped → Blue */
+.status.Shipped{
+  background:linear-gradient(135deg,#dbeafe,#bfdbfe);
+  color:#1e40af;
+  box-shadow:0 0 0 1px rgba(37,99,235,.35) inset;
+}
+
+/* Delivered → Green */
+.status.Delivered{
+  background:linear-gradient(135deg,#dcfce7,#bbf7d0);
+  color:#14532d;
+  box-shadow:0 0 0 1px rgba(34,197,94,.35) inset;
+}
+
+/* Cancelled → Red */
+.status.Cancelled{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);
+  color:#7f1d1d;
+  box-shadow:0 0 0 1px rgba(239,68,68,.35) inset;
+}
 
 /* ================= ITEM ================= */
 .item{
   display:flex;
+  justify-content:space-between;
   gap:14px;
-  padding:14px;
+  padding:14px 16px;
   margin-top:12px;
   border-radius:18px;
   background:var(--glass);
   border:1px solid var(--border);
-}
-
-.item-info h4{
   font-size:14px;
-  font-weight:500;
-}
-
-.item-info p{
-  font-size:13px;
-  color:#94a3b8;
 }
 
 /* ================= TOTAL ================= */
@@ -124,6 +141,7 @@ header button{
   margin-top:16px;
   font-weight:600;
   color:#22c55e;
+  font-size:15px;
 }
 
 /* ================= EMPTY ================= */
@@ -153,7 +171,7 @@ header button{
   }
   .status{
     font-size:10px;
-    padding:5px 12px;
+    padding:6px 14px;
   }
   .order{padding:16px}
 }
@@ -214,7 +232,8 @@ async function loadOrders() {
 
           ${(o.items || []).map(i => `
             <div class="item">
-              ${i.name} × ${i.qty} (${money(i.price)})
+              <div>${i.name} × ${i.qty}</div>
+              <div>${money(i.price)}</div>
             </div>
           `).join("")}
 
