@@ -173,79 +173,64 @@ header button{
 <script>
 "use strict";
 
-/* ================= CONFIG ================= */
 const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_ORDERS = BASE_URL + "/api/orders";
 
-/* ================= AUTH ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
-if (!USER_ID) {
-  window.location.href = "../index.html";
-}
+if (!USER_ID) location.href = "../index.html";
 
-/* ================= ELEMENTS ================= */
 const ordersDiv = document.getElementById("orders");
 const money = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 
-/* ================= LOAD ORDERS ================= */
-async function loadOrders(){
-  ordersDiv.innerHTML = "<p class='empty'>Loading orders...</p>";
+const prettyStatus = s =>
+  s.charAt(0) + s.slice(1).toLowerCase();
 
-  try{
+async function loadOrders() {
+  ordersDiv.innerHTML = "<p>Loading orders...</p>";
+
+  try {
     const res = await fetch(API_ORDERS, {
       headers: { "x-user-id": USER_ID }
     });
-
-    if (!res.ok) throw new Error("API error");
+    if (!res.ok) throw new Error();
 
     const list = await res.json();
     ordersDiv.innerHTML = "";
 
-    if (!Array.isArray(list) || list.length === 0) {
-      ordersDiv.innerHTML = "<p class='empty'>No orders found</p>";
+    if (!list.length) {
+      ordersDiv.innerHTML = "<p>No orders found</p>";
       return;
     }
 
     list.forEach(o => {
-      const statusText = (o.status || "Placed").replace(/\s/g,"");
-
-      const itemsHtml = o.items.map(i => `
-        <div class="item">
-          <div class="item-info">
-            <h4>${i.name}</h4>
-            <p>${money(i.price)} × ${i.qty}</p>
-          </div>
-        </div>
-      `).join("");
-
       ordersDiv.innerHTML += `
         <div class="order">
           <div class="order-head">
-            <div class="order-id">Order #${o.id}</div>
-            <div class="status ${statusText}">
-              ${o.status || "Placed"}
+            <div>Order #${o.id}</div>
+            <div class="status ${o.status}">
+              ${prettyStatus(o.status)}
             </div>
           </div>
 
-          ${itemsHtml}
+          ${(o.items || []).map(i => `
+            <div class="item">
+              ${i.name} × ${i.qty} (${money(i.price)})
+            </div>
+          `).join("")}
 
           <div class="total">
-            Total: ${money(o.total)}
+            Total: ${money(o.total_amount)}
           </div>
         </div>
       `;
     });
 
-  } catch (err) {
-    console.error(err);
-    ordersDiv.innerHTML =
-      "<p class='empty'>Failed to load orders</p>";
+  } catch {
+    ordersDiv.innerHTML = "<p>Failed to load orders</p>";
   }
 }
 
-/* ================= INIT ================= */
 loadOrders();
 </script>
-
 </body>
 </html>

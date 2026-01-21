@@ -156,35 +156,37 @@ const API = window.APP_CONFIG.API_BASE;
 let allOrders = [];
 let currentFilter = "ALL";
 
+/* HELPERS */
+const prettyStatus = s =>
+  s.charAt(0) + s.slice(1).toLowerCase();
+
 /* FETCH */
-async function apiFetch(url, options = {}){
-  const res = await fetch(url,{
+async function apiFetch(url, options = {}) {
+  const res = await fetch(url, {
     ...options,
-    headers:{
-      "Content-Type":"application/json",
+    headers: {
+      "Content-Type": "application/json",
       ...(options.headers || {})
     }
   });
-
   const data = await res.json();
-  if(!res.ok) throw data;
+  if (!res.ok) throw data;
   return data;
 }
 
 /* LOAD */
-async function loadOrders(){
-  try{
+async function loadOrders() {
+  try {
     allOrders = await apiFetch(`${API}/api/orders/admin`);
     renderOrders();
-  }catch(err){
-    console.error(err);
+  } catch (e) {
     document.getElementById("orders").innerHTML =
       "<p style='color:red'>Failed to load orders</p>";
   }
 }
 
 /* FILTER */
-function setFilter(status, btn){
+function setFilter(status, btn) {
   currentFilter = status;
   document.querySelectorAll(".filters button")
     .forEach(b => b.classList.remove("active"));
@@ -192,24 +194,24 @@ function setFilter(status, btn){
   renderOrders();
 }
 
-/* UPDATE */
-async function updateStatus(id, status){
-  await apiFetch(`${API}/api/orders/${id}/status`,{
-    method:"PUT",
-    body:JSON.stringify({status})
+/* UPDATE STATUS */
+async function updateStatus(id, status) {
+  await apiFetch(`${API}/api/orders/${id}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status })
   });
   loadOrders();
 }
 
 /* DELETE */
-async function deleteOrder(id){
-  if(!confirm("Delete this order?")) return;
-  await apiFetch(`${API}/api/orders/${id}`,{method:"DELETE"});
+async function deleteOrder(id) {
+  if (!confirm("Delete this order?")) return;
+  await apiFetch(`${API}/api/orders/${id}`, { method: "DELETE" });
   loadOrders();
 }
 
 /* RENDER */
-function renderOrders(){
+function renderOrders() {
   const div = document.getElementById("orders");
   div.innerHTML = "";
 
@@ -217,20 +219,20 @@ function renderOrders(){
     ? allOrders
     : allOrders.filter(o => o.status === currentFilter);
 
-  if(!list.length){
+  if (!list.length) {
     div.innerHTML = "<p>No orders found</p>";
     return;
   }
 
-  list.forEach(o=>{
+  list.forEach(o => {
     div.innerHTML += `
       <div class="order">
         <b>Order #${o.id}</b><br>
-        User: ${o.user_id}<br>
+        User ID: ${o.user_id}<br>
         Total: ₹${Number(o.total_amount).toLocaleString("en-IN")}
 
         <div class="status ${o.status}">
-          Status: ${o.status}
+          ${prettyStatus(o.status)}
         </div>
 
         <div class="items">
@@ -240,10 +242,20 @@ function renderOrders(){
         </div>
 
         <div class="actions">
-          <button class="ship" onclick="updateStatus(${o.id},'Shipped')" ${o.status!=="Placed"?"disabled":""}>Ship</button>
-          <button class="deliver" onclick="updateStatus(${o.id},'Delivered')" ${o.status!=="Shipped"?"disabled":""}>Deliver</button>
-          <button class="cancel" onclick="updateStatus(${o.id},'Cancelled')" ${o.status==="Delivered"?"disabled":""}>Cancel</button>
-          <button class="delete" onclick="deleteOrder(${o.id})">Delete</button>
+          <button class="ship"
+            onclick="updateStatus(${o.id},'SHIPPED')"
+            ${o.status !== "PLACED" ? "disabled" : ""}>Ship</button>
+
+          <button class="deliver"
+            onclick="updateStatus(${o.id},'DELIVERED')"
+            ${o.status !== "SHIPPED" ? "disabled" : ""}>Deliver</button>
+
+          <button class="cancel"
+            onclick="updateStatus(${o.id},'CANCELLED')"
+            ${o.status === "DELIVERED" ? "disabled" : ""}>Cancel</button>
+
+          <button class="delete"
+            onclick="deleteOrder(${o.id})">Delete</button>
         </div>
       </div>
     `;
