@@ -180,11 +180,6 @@ const avatar    = document.getElementById("avatar");
 const saveBtn   = document.getElementById("saveBtn");
 
 /* ================= USER ID ================= */
-/*
-  RULE:
-  - USER_ID = phone number
-  - same phone → same user → same profile everywhere
-*/
 let USER_ID = localStorage.getItem("jd_user_id");
 
 /* ================= LOAD PROFILE ================= */
@@ -211,34 +206,37 @@ if (USER_ID) {
 }
 
 /* ================= SAVE PROFILE ================= */
-saveBtn.onclick = () => {
+saveBtn.onclick = async () => {
 
   if (!nameI.value || !phoneI.value || !addressI.value) {
     alert("Please fill all required fields");
     return;
   }
 
-  /* 🔥 PHONE-BASED USER ID (FIX) */
+  /* ✅ STABLE USER ID (PHONE BASED) */
   USER_ID = "jd_user_" + phoneI.value.trim();
   localStorage.setItem("jd_user_id", USER_ID);
 
   const fd = new FormData();
   fd.append("name", nameI.value);
   fd.append("phone", phoneI.value);
-  fd.append("altPhone", altPhoneI.value);
+  fd.append("alt_phone", altPhoneI.value); // ✅ FIX
   fd.append("address", addressI.value);
 
   if (imageI.files[0]) {
     fd.append("image", imageI.files[0]);
   }
 
-  fetch(API_PROFILE, {
-    method: "POST",
-    headers: { "x-user-id": USER_ID },
-    body: fd
-  })
-  .then(r => r.ok ? r.json() : Promise.reject())
-  .then(() => {
+  try {
+    const res = await fetch(API_PROFILE, {
+      method: "POST",
+      headers: { "x-user-id": USER_ID },
+      body: fd
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw data;
+
     alert("Profile saved successfully ✅");
 
     if (imageI.files[0]) {
@@ -246,8 +244,11 @@ saveBtn.onclick = () => {
       img.hidden = false;
       avatar.hidden = true;
     }
-  })
-  .catch(() => alert("Failed to save profile ❌"));
+
+  } catch (err) {
+    console.error(err);
+    alert(err?.error || "Save failed ❌");
+  }
 };
 
 /* ================= LOGOUT ================= */
@@ -256,6 +257,7 @@ function logout() {
   location.href = "../index.html";
 }
 </script>
+
 
 
 </body>

@@ -156,31 +156,30 @@ header a{
 </div>
 
 <script src="../config.js"></script>
-
 <script>
 "use strict";
 
-/* CONFIG */
-const API_BASE = window.APP_CONFIG?.API_BASE || "";
+/* ================= CONFIG ================= */
+const API_BASE = window.APP_CONFIG.API_BASE;
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
-/* LOAD USERS – NO AUTH + NO CACHE */
+/* ================= LOAD USERS ================= */
 async function loadUsers() {
-  try {
-    usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
+  usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
 
+  try {
     const res = await fetch(
       `${API_BASE}/api/admin/users?ts=${Date.now()}`,
       { cache: "no-store" }
     );
 
-    if (!res.ok) throw new Error("API error");
+    if (!res.ok) throw new Error("API failed");
 
     const users = await res.json();
     usersList.innerHTML = "";
 
-    if (!Array.isArray(users) || users.length === 0) {
+    if (!users.length) {
       usersList.innerHTML = "<p style='opacity:.6'>No users found</p>";
       return;
     }
@@ -197,8 +196,8 @@ async function loadUsers() {
           </div>
           <div class="user-info">
             <p><strong>${u.name || "Guest"}</strong></p>
-            <p>📞 Phone: ${u.phone || "-"}</p>
-            <p>🏠 Address: ${u.address || "-"}</p>
+            <p>📞 ${u.phone || "-"}</p>
+            <p>🏠 ${u.address || "-"}</p>
           </div>
         </div>
       `);
@@ -211,9 +210,10 @@ async function loadUsers() {
   }
 }
 
-/* INIT */
+/* ================= INIT ================= */
 loadUsers();
 </script>
+
 
 </body>
 </html>
