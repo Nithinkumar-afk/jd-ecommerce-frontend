@@ -1,168 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Order Successful | JD</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>Checkout | JD Store</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-
 body{
+  margin:0;
   font-family:Poppins,sans-serif;
-  background:radial-gradient(circle at top,#0f172a,#020617);
-  color:#f8fafc;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  background:radial-gradient(circle at top,#0b0b0b,#000);
+  color:#fff;
 }
 
 .container{
-  width:100%;
-  max-width:720px;
-  margin:40px 18px;
-  background:rgba(255,255,255,.07);
-  backdrop-filter:blur(20px);
-  border-radius:26px;
-  padding:28px;
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 25px 60px rgba(0,0,0,.45)
+  max-width:900px;
+  margin:40px auto;
+  padding:20px;
 }
 
-.success{text-align:center;margin-bottom:26px}
-.success h1{color:#22c55e;margin-bottom:8px;font-size:24px}
-
-.order-id{margin-top:10px;color:#94a3b8;font-size:14px}
-
-#orderItems{margin-top:16px}
-
-.item{
-  background:rgba(255,255,255,.08);
-  padding:16px;
-  border-radius:18px;
-  margin-top:14px;
+.card{
+  background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.12);
+  border-radius:20px;
+  padding:24px;
+  margin-bottom:24px;
+}
+
+h2{margin-bottom:16px}
+
+input, textarea{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  margin-bottom:14px;
+  font-family:inherit;
+}
+
+textarea{resize:none}
+
+.cart-item{
   display:flex;
   justify-content:space-between;
-  gap:12px
+  margin-bottom:10px;
 }
 
 .total{
-  text-align:right;
   font-size:18px;
   font-weight:600;
-  margin-top:26px;
-  color:#22c55e
+  margin-top:12px;
 }
 
-.actions{
-  margin-top:34px;
-  display:flex;
-  gap:16px
-}
-
-.actions a{
-  flex:1;
-  text-align:center;
+button{
+  width:100%;
   padding:14px;
-  border-radius:16px;
-  text-decoration:none;
-  font-weight:600;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg,#4da3ff,#2563eb);
+  color:#fff;
+  font-size:16px;
+  cursor:pointer;
 }
-
-.home{
-  background:linear-gradient(135deg,#38bdf8,#2563eb);
-  color:#fff
-}
-
-.orders{
-  background:rgba(255,255,255,.12);
-  color:#f8fafc;
-  border:1px solid rgba(255,255,255,.2)
-}
-
-@media(max-width:600px){
-  .item{flex-direction:column}
-  .actions{flex-direction:column}
-}
+button:disabled{opacity:.6}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-  <div class="success">
-    <h1>✅ Order Placed Successfully</h1>
-    <div class="order-id">
-      Order ID: <b>#<span id="orderId"></span></b>
-    </div>
+
+  <!-- ADDRESS -->
+  <div class="card">
+    <h2>Delivery Details</h2>
+    <input id="name" placeholder="Full Name">
+    <input id="phone" placeholder="Phone Number">
+    <textarea id="address" rows="3" placeholder="Delivery Address"></textarea>
   </div>
 
-  <div id="orderItems"></div>
-
-  <div class="total">
-    Total Paid: ₹<span id="orderTotal"></span>
+  <!-- ORDER SUMMARY -->
+  <div class="card">
+    <h2>Order Summary</h2>
+    <div id="orderItems"></div>
+    <div class="total" id="orderTotal"></div>
   </div>
 
-  <div class="actions">
-    <a href="../index.html" class="home">Continue Shopping</a>
-    <a href="orders.html" class="orders">View Orders</a>
-  </div>
+  <!-- PLACE ORDER -->
+  <button id="placeOrderBtn">Place Order</button>
+
 </div>
 
 <script src="../config.js"></script>
 <script>
 "use strict";
 
-const BASE_URL = window.APP_CONFIG.API_BASE;
-const API_ORDERS = BASE_URL + "/api/orders";
+/* ================= CONFIG ================= */
+const API_BASE = window.APP_CONFIG.API_BASE;
+const API_ORDERS = API_BASE + "/api/orders";
+const API_PROFILE = API_BASE + "/api/profile";
 
+/* ================= USER ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
-const ORDER_ID = localStorage.getItem("last_order_id");
-
-if (!USER_ID || !ORDER_ID) {
+if (!USER_ID) {
+  alert("Please login first");
   location.href = "../index.html";
 }
 
-fetch(`${API_ORDERS}/${ORDER_ID}`, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(res => {
-  if (!res.ok) throw new Error("Failed to load order");
-  return res.json();
-})
-.then(order => {
-  document.getElementById("orderId").textContent = order.id;
-  document.getElementById("orderTotal").textContent =
-    Number(order.total_amount).toLocaleString("en-IN");
-
-  const box = document.getElementById("orderItems");
-  box.innerHTML = "";
-
-  order.items.forEach(i => {
-    box.innerHTML += `
-      <div class="item">
-        <span>${i.name} × ${i.quantity}</span>
-        <span>₹${(i.price * i.quantity).toLocaleString("en-IN")}</span>
-      </div>`;
-  });
-
-  setTimeout(() => localStorage.removeItem("last_order_id"), 5000);
-})
-.catch(err => {
-  console.error(err);
-  alert("Failed to load order details");
+/* ================= CART ================= */
+const CART_KEY = "jd_cart";
+const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+if (cart.length === 0) {
+  alert("Cart is empty");
   location.href = "../index.html";
+}
+
+/* ================= ELEMENTS ================= */
+const nameI = document.getElementById("name");
+const phoneI = document.getElementById("phone");
+const addressI = document.getElementById("address");
+const itemsBox = document.getElementById("orderItems");
+const totalBox = document.getElementById("orderTotal");
+const btn = document.getElementById("placeOrderBtn");
+
+/* ================= LOAD PROFILE ================= */
+fetch(API_PROFILE, {
+  headers:{ "x-user-id": USER_ID }
+})
+.then(r=>r.json())
+.then(u=>{
+  nameI.value = u.name || "";
+  phoneI.value = u.phone || "";
+  addressI.value = u.address || "";
 });
+
+/* ================= RENDER SUMMARY ================= */
+let total = 0;
+cart.forEach(i=>{
+  total += i.price * i.qty;
+  itemsBox.innerHTML += `
+    <div class="cart-item">
+      <span>${i.name} × ${i.qty}</span>
+      <span>₹${(i.price * i.qty).toLocaleString("en-IN")}</span>
+    </div>`;
+});
+totalBox.textContent = "Total: ₹" + total.toLocaleString("en-IN");
+
+/* ================= PLACE ORDER ================= */
+btn.onclick = async () => {
+
+  if (!nameI.value || !phoneI.value || !addressI.value) {
+    alert("Please fill all delivery details");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Placing order...";
+
+  try {
+    const res = await fetch(API_ORDERS, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-user-id": USER_ID
+      },
+      body:JSON.stringify({
+        items: cart.map(i=>({
+          product_id: i.id,
+          price: i.price,
+          quantity: i.qty
+        })),
+        total
+      })
+    });
+
+    if(!res.ok) throw new Error();
+
+    const data = await res.json();
+    localStorage.setItem("last_order_id", data.orderId);
+    localStorage.removeItem(CART_KEY);
+
+    location.href = "success.html";
+
+  } catch {
+    alert("Order failed");
+    btn.disabled = false;
+    btn.textContent = "Place Order";
+  }
+};
 </script>
 
 </body>
 </html>
-
-
-
-
-
