@@ -129,26 +129,28 @@ header{
   flex-direction:column;
   gap:10px;
 }
-
-/* ================= IMAGE SCROLLER ================= */
-.img-scroll{
-  display:flex;
-  gap:10px;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-}
-.img-scroll::-webkit-scrollbar{height:6px}
-.img-scroll::-webkit-scrollbar-thumb{
-  background:rgba(255,255,255,.2);
-  border-radius:999px;
-}
-
-.img-scroll img{
-  min-width:100%;
+.img-box{
+  width:100%;
   height:200px;
-  object-fit:cover;
   border-radius:14px;
-  scroll-snap-align:start;
+  overflow:hidden;
+  cursor:pointer;
+}
+.img-box img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transition:.3s;
+}
+.product:hover img{transform:scale(1.05)}
+.cart-btn{
+  margin-top:auto;
+  padding:12px;
+  border-radius:12px;
+  border:none;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:white;
+  cursor:pointer;
 }
 
 /* ================= TOAST ================= */
@@ -186,17 +188,14 @@ header{
   position:relative;
 }
 
-/* MODAL SCROLLER */
-.modal-scroll{
-  display:flex;
-  gap:12px;
-  overflow-x:auto;
-}
-.modal-scroll img{
-  min-width:100%;
+/* ✅ FULL IMAGE – NO CROP */
+.modal img{
+  width:100%;
+  height:auto;
   max-height:70vh;
   object-fit:contain;
   border-radius:14px;
+  background:#000;
 }
 
 .close{
@@ -219,6 +218,7 @@ header{
   #search{
     width:100%;
   }
+  .img-box{height:180px}
 }
 </style>
 </head>
@@ -258,7 +258,7 @@ header{
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <span class="close" onclick="closeModal()">✕</span>
-    <div class="modal-scroll" id="modalImages"></div>
+    <img id="modalImg">
     <h2 id="modalName"></h2>
     <p id="modalPrice"></p>
   </div>
@@ -279,9 +279,9 @@ const cartCount = document.getElementById("cartCount");
 const search = document.getElementById("search");
 const toast = document.getElementById("toast");
 const modal = document.getElementById("modal");
+const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
-const modalImages = document.getElementById("modalImages");
 const profileMenu = document.getElementById("profileMenu");
 const profileBtn = document.getElementById("profileBtn");
 
@@ -316,27 +316,17 @@ fetch(API_PRODUCTS)
   })
   .catch(()=>products.innerHTML="<p>Failed to load products</p>");
 
-/* 🔥 OVERRIDDEN WITH IMAGE SCROLLER */
 function renderProducts(){
   const q = search.value.toLowerCase();
   products.innerHTML="";
   productsData
     .filter(p=>p.name.toLowerCase().includes(q))
     .forEach(p=>{
-
-      const images = [];
-      if(p.image) images.push(API + p.image);
-      if(p.image2) images.push(API + p.image2);
-      if(p.image3) images.push(API + p.image3);
-
-      const imgs = images.length ? images : [FALLBACK];
-
+      const img = p.image ? API + p.image : FALLBACK;
       products.insertAdjacentHTML("beforeend",`
         <div class="product">
-          <div class="img-scroll" onclick="openModal(${p.id})">
-            ${imgs.map(i=>`
-              <img src="${i}" onerror="this.src='${FALLBACK}'">
-            `).join("")}
+          <div class="img-box" onclick="openModal(${p.id})">
+            <img src="${img}" onerror="this.src='${FALLBACK}'">
           </div>
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
@@ -359,30 +349,14 @@ function addToCart(id){
   showToast("Added to cart 🛒");
 }
 
-/* 🔥 OVERRIDDEN MODAL WITH SCROLLER */
 function openModal(id){
   const p = productsData.find(p=>p.id===id);
   if(!p) return;
-
-  modalImages.innerHTML="";
-
-  const imgs = [];
-  if(p.image) imgs.push(API + p.image);
-  if(p.image2) imgs.push(API + p.image2);
-  if(p.image3) imgs.push(API + p.image3);
-
-  (imgs.length?imgs:[FALLBACK]).forEach(src=>{
-    const im = document.createElement("img");
-    im.src = src;
-    im.onerror = ()=>im.src=FALLBACK;
-    modalImages.appendChild(im);
-  });
-
   modal.style.display="flex";
+  modalImg.src = p.image ? API + p.image : FALLBACK;
   modalName.textContent = p.name;
   modalPrice.textContent = "₹"+p.price;
 }
-
 function closeModal(){ modal.style.display="none"; }
 modal.onclick = e => { if(e.target===modal) closeModal(); };
 
