@@ -118,13 +118,7 @@ header button{
   color:#94a3b8;
 }
 
-/* ================= META ================= */
-.meta{
-  margin-top:10px;
-  font-size:12px;
-  color:#94a3b8;
-}
-
+/* ================= TOTAL ================= */
 .total{
   text-align:right;
   margin-top:16px;
@@ -183,10 +177,10 @@ header button{
 const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_ORDERS = BASE_URL + "/api/orders";
 
-/* ✅ FIXED AUTH (MATCHES CHECKOUT) */
+/* ================= AUTH ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
-  location.href = "../index.html";
+  window.location.href = "../index.html";
 }
 
 /* ================= ELEMENTS ================= */
@@ -195,23 +189,25 @@ const money = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 
 /* ================= LOAD ORDERS ================= */
 async function loadOrders(){
+  ordersDiv.innerHTML = "<p class='empty'>Loading orders...</p>";
+
   try{
     const res = await fetch(API_ORDERS, {
       headers: { "x-user-id": USER_ID }
     });
 
+    if (!res.ok) throw new Error("API error");
+
     const list = await res.json();
     ordersDiv.innerHTML = "";
 
     if (!Array.isArray(list) || list.length === 0) {
-      ordersDiv.innerHTML =
-        "<p class='empty'>No orders found</p>";
+      ordersDiv.innerHTML = "<p class='empty'>No orders found</p>";
       return;
     }
 
     list.forEach(o => {
-
-      const statusText = o.status || "Placed";
+      const statusText = (o.status || "Placed").replace(/\s/g,"");
 
       const itemsHtml = o.items.map(i => `
         <div class="item">
@@ -227,7 +223,7 @@ async function loadOrders(){
           <div class="order-head">
             <div class="order-id">Order #${o.id}</div>
             <div class="status ${statusText}">
-              ${statusText}
+              ${o.status || "Placed"}
             </div>
           </div>
 
