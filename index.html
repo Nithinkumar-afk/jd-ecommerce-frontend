@@ -215,7 +215,6 @@ header{
       </div>
     </div>
 
-    <!-- ✅ CHECKOUT LINK ADDED -->
     <a href="user/checkout.html" class="checkout">Checkout</a>
 
     <button class="cart" onclick="location.href='user/cart.html'">
@@ -276,14 +275,17 @@ function showToast(msg){
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* PROFILE MENU */
-profileBtn.onclick = () => {
+/* PROFILE MENU — FIXED */
+profileBtn.onclick = (e) => {
+  e.stopPropagation();
   profileMenu.style.display =
     profileMenu.style.display==="flex"?"none":"flex";
 };
-document.onclick = e => {
-  if(!profileBtn.contains(e.target))
-    profileMenu.style.display="none";
+
+profileMenu.onclick = e => e.stopPropagation();
+
+document.onclick = () => {
+  profileMenu.style.display = "none";
 };
 
 /* LOGOUT */
