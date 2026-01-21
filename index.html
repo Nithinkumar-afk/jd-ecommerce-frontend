@@ -175,12 +175,22 @@ header{
   width:90%;
   padding:20px;
   position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:85vh;
 }
 .modal img{
   width:100%;
   height:240px;
   object-fit:cover;
   border-radius:14px;
+}
+.modal-desc{
+  font-size:14px;
+  color:#d1d5db;
+  line-height:1.5;
+  overflow-y:auto;
 }
 .close{
   position:absolute;
@@ -192,6 +202,7 @@ header{
 @media(max-width:768px){
   header{flex-wrap:wrap}
   #search{width:100%}
+  .modal img{height:180px}
 }
 </style>
 </head>
@@ -235,6 +246,7 @@ header{
     <img id="modalImg">
     <h2 id="modalName"></h2>
     <p id="modalPrice"></p>
+    <p class="modal-desc" id="modalDesc"></p>
   </div>
 </div>
 
@@ -259,6 +271,7 @@ const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
+const modalDesc = document.getElementById("modalDesc");
 const profileMenu = document.getElementById("profileMenu");
 const profileBtn = document.getElementById("profileBtn");
 
@@ -275,18 +288,14 @@ function showToast(msg){
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* PROFILE MENU — FIXED */
+/* PROFILE MENU */
 profileBtn.onclick = (e) => {
   e.stopPropagation();
   profileMenu.style.display =
     profileMenu.style.display==="flex"?"none":"flex";
 };
-
 profileMenu.onclick = e => e.stopPropagation();
-
-document.onclick = () => {
-  profileMenu.style.display = "none";
-};
+document.onclick = () => profileMenu.style.display = "none";
 
 /* LOGOUT */
 function logout(){
@@ -345,10 +354,13 @@ function addToCart(id){
 function openModal(id){
   const p = productsData.find(p=>p.id===id);
   if(!p) return;
+
   modal.style.display="flex";
   modalImg.src = p.image ? API + p.image : FALLBACK;
   modalName.textContent = p.name;
   modalPrice.textContent = "₹"+p.price;
+  modalDesc.textContent =
+    p.description || "No description available for this product.";
 }
 function closeModal(){ modal.style.display="none"; }
 modal.onclick = e => { if(e.target===modal) closeModal(); };
