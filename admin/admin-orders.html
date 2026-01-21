@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-:root{
+:root {
   --bg:#000;
   --card:#111;
   --border:#222;
@@ -17,9 +17,9 @@
   --accent:orange;
 }
 
-*{box-sizing:border-box}
+* { box-sizing:border-box }
 
-body{
+body {
   background:var(--bg);
   color:var(--text);
   font-family:Poppins,sans-serif;
@@ -30,7 +30,7 @@ body{
 
 body.loaded{opacity:1}
 
-header{
+header {
   padding:18px 20px;
   font-size:22px;
   font-weight:600;
@@ -47,14 +47,14 @@ header a{
   opacity:.85;
 }
 
-.filters{
+.filters {
   display:flex;
   gap:10px;
   padding:16px 20px;
   flex-wrap:wrap;
 }
 
-.filters button{
+.filters button {
   padding:10px 16px;
   border:none;
   border-radius:999px;
@@ -63,18 +63,18 @@ header a{
   cursor:pointer;
 }
 
-.filters button.active{
+.filters button.active {
   background:orange;
   color:#000;
 }
 
-.container{
+.container {
   padding:20px;
   max-width:1200px;
   margin:auto;
 }
 
-.order{
+.order {
   background:#111;
   padding:16px;
   border-radius:16px;
@@ -82,31 +82,28 @@ header a{
   border:1px solid #222;
 }
 
-.status{
-  font-weight:600;
-  margin-top:6px;
-}
+.status { font-weight:600; margin-top:6px }
 
-.Placed{color:orange}
-.Shipped{color:#38bdf8}
-.Delivered{color:#22c55e}
-.Cancelled{color:#ef4444}
+.PLACED { color:orange }
+.SHIPPED { color:#38bdf8 }
+.DELIVERED { color:#22c55e }
+.CANCELLED { color:#ef4444 }
 
-.items{
+.items {
   margin-top:10px;
   font-size:14px;
   color:#cbd5f5;
   line-height:1.6;
 }
 
-.actions{
+.actions {
   display:flex;
   flex-wrap:wrap;
   gap:10px;
   margin-top:14px;
 }
 
-.actions button{
+.actions button {
   padding:8px 16px;
   border:none;
   border-radius:10px;
@@ -118,15 +115,15 @@ header a{
   cursor:not-allowed;
 }
 
-.ship{background:#0ea5e9}
-.deliver{background:#22c55e}
-.cancel{background:#ef4444}
-.delete{background:#6b7280}
+.ship { background:#0ea5e9 }
+.deliver { background:#22c55e }
+.cancel { background:#ef4444 }
+.delete { background:#6b7280 }
 
-@media(max-width:600px){
-  header{font-size:18px}
-  .filters{overflow-x:auto;flex-wrap:nowrap}
-  .actions button{width:100%}
+@media (max-width:600px) {
+  header { font-size:18px }
+  .filters { overflow-x:auto; flex-wrap:nowrap }
+  .actions button { width:100% }
 }
 </style>
 </head>
@@ -135,32 +132,34 @@ header a{
 
 <header>
   <span>JD Admin – Orders</span>
-  <a href="admin-dashboard.html">← Dashboard</a>
+  <a href="admin-dashboard.html" class="nav-link">← Dashboard</a>
 </header>
 
 <div class="filters">
   <button class="active" onclick="setFilter('ALL',this)">All</button>
-  <button onclick="setFilter('Placed',this)">Placed</button>
-  <button onclick="setFilter('Shipped',this)">Shipped</button>
-  <button onclick="setFilter('Delivered',this)">Delivered</button>
-  <button onclick="setFilter('Cancelled',this)">Cancelled</button>
+  <button onclick="setFilter('PLACED',this)">Placed</button>
+  <button onclick="setFilter('SHIPPED',this)">Shipped</button>
+  <button onclick="setFilter('DELIVERED',this)">Delivered</button>
+  <button onclick="setFilter('CANCELLED',this)">Cancelled</button>
 </div>
 
-<div class="container" id="orders">Loading…</div>
+<div class="container" id="orders">Loading...</div>
 
 <script src="../config.js"></script>
 <script>
 "use strict";
 
-document.body.classList.add("loaded");
+/* PAGE LOAD */
+window.addEventListener("load",()=>{
+  document.body.classList.add("loaded");
+});
 
+/* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
-let allOrders = [];
-let currentFilter = "ALL";
 
-/* ================= API FETCH ================= */
+/* SIMPLE FETCH */
 async function apiFetch(url, options = {}){
-  const res = await fetch(url,{
+  const res = await fetch(url, {
     ...options,
     headers:{
       "Content-Type":"application/json",
@@ -168,56 +167,66 @@ async function apiFetch(url, options = {}){
     }
   });
 
-  const data = await res.json();
-  if(!res.ok) throw data;
-  return data;
+  if(!res.ok){
+    throw new Error("Request failed");
+  }
+
+  return res.json();
 }
 
-/* ================= LOAD ORDERS ================= */
+/* STATE */
+let allOrders = [];
+let currentFilter = "ALL";
+
+/* LOAD ORDERS */
 async function loadOrders(){
   try{
-    allOrders = await apiFetch(`${API}/api/orders/admin`);
+    allOrders = await apiFetch(API + "/api/orders/admin");
     renderOrders();
   }catch(err){
+    console.error(err);
     document.getElementById("orders").innerHTML =
-      "<p style='color:red'>Failed to load orders</p>";
+      "<p style='color:red'>Error loading orders</p>";
   }
 }
 
-/* ================= UPDATE STATUS ================= */
-async function updateStatus(id,status){
-  try{
-    await apiFetch(`${API}/api/orders/${id}/status`,{
-      method:"PUT",
-      body:JSON.stringify({status})
-    });
-    loadOrders();
-  }catch(e){
-    alert(e.error || "Status update failed");
-  }
-}
-
-/* ================= DELETE ================= */
-async function deleteOrder(id){
-  if(!confirm("Delete this order?")) return;
-  try{
-    await apiFetch(`${API}/api/orders/${id}`,{method:"DELETE"});
-    loadOrders();
-  }catch{
-    alert("Delete failed");
-  }
-}
-
-/* ================= FILTER ================= */
-function setFilter(status,btn){
+/* FILTER */
+function setFilter(status, btn){
   currentFilter = status;
   document.querySelectorAll(".filters button")
-    .forEach(b=>b.classList.remove("active"));
+    .forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   renderOrders();
 }
 
-/* ================= RENDER ================= */
+/* UPDATE STATUS */
+async function updateStatus(id, status){
+  try{
+    await apiFetch(`${API}/api/orders/${id}/status`, {
+      method:"PUT",
+      body:JSON.stringify({ status })
+    });
+    loadOrders();
+  }catch{
+    alert("Failed to update status");
+  }
+}
+
+/* DELETE ORDER */
+async function deleteOrder(id){
+  if(!confirm("Delete this order?")) return;
+
+  try{
+    await apiFetch(`${API}/api/orders/${id}`, {
+      method:"DELETE"
+    });
+    loadOrders();
+  }catch{
+    alert("Failed to delete order");
+  }
+}
+
+/* RENDER */
 function renderOrders(){
   const div = document.getElementById("orders");
   div.innerHTML = "";
@@ -235,28 +244,37 @@ function renderOrders(){
     div.innerHTML += `
       <div class="order">
         <b>Order #${o.id}</b><br>
-        User ID: ${o.user_id}<br>
-        Total: ₹${Number(o.total_amount).toLocaleString("en-IN")}
+        <b>User:</b> ${o.user_id}<br>
+        <b>Total:</b> ₹${Number(o.total).toLocaleString("en-IN")}
 
-        <div class="status ${o.status}">${o.status}</div>
+        <div class="status ${o.status}">
+          Status: ${o.status}
+        </div>
 
         <div class="items">
-          ${(o.items || []).map(i =>
+          ${o.items.map(i =>
             `${i.name} × ${i.qty} (₹${i.price})`
           ).join("<br>")}
         </div>
 
         <div class="actions">
-          <button class="ship" onclick="updateStatus(${o.id},'Shipped')" ${o.status!=="Placed"?"disabled":""}>Ship</button>
-          <button class="deliver" onclick="updateStatus(${o.id},'Delivered')" ${o.status!=="Shipped"?"disabled":""}>Deliver</button>
-          <button class="cancel" onclick="updateStatus(${o.id},'Cancelled')" ${o.status==="Delivered"?"disabled":""}>Cancel</button>
-          <button class="delete" onclick="deleteOrder(${o.id})">Delete</button>
+          <button onclick="updateStatus(${o.id},'SHIPPED')"
+            ${o.status!=="PLACED"?"disabled":""}>Ship</button>
+
+          <button onclick="updateStatus(${o.id},'DELIVERED')"
+            ${o.status!=="SHIPPED"?"disabled":""}>Deliver</button>
+
+          <button onclick="updateStatus(${o.id},'CANCELLED')"
+            ${o.status==="DELIVERED"?"disabled":""}>Cancel</button>
+
+          <button onclick="deleteOrder(${o.id})">Delete</button>
         </div>
       </div>
     `;
   });
 }
 
+/* INIT */
 loadOrders();
 </script>
 
