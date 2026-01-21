@@ -113,59 +113,82 @@ body{
   </div>
 </div>
 
+<script src="../config.js"></script>
 <script>
 "use strict";
 
-const BASE_URL = window.APP_CONFIG.API_BASE;
+/* ================= CONFIG ================= */
+const BASE_URL =
+  window.APP_CONFIG?.API_BASE ||
+  "https://jd-backend-production.up.railway.app";
+
 const API_ORDERS = BASE_URL + "/api/orders";
 
+/* ================= USER ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
-  alert("Please login");
+  alert("Please login first");
   location.href = "../index.html";
 }
 
+/* ================= CART ================= */
 const CART_KEY = "jd_cart";
 const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
 if (cart.length === 0) {
-  alert("Cart is empty");
-  location.href = "../index.html";
+  alert("Your cart is empty");
+  location.href = "../cart.html";
 }
 
-const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+/* ================= TOTAL ================= */
+const total = cart.reduce(
+  (sum, i) => sum + Number(i.price) * Number(i.qty),
+  0
+);
 
-document.getElementById("orderBtn").onclick = () => {
-  fetch(API_ORDERS, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": USER_ID
-    },
-    body: JSON.stringify({
-      items: cart.map(i => ({
-        product_id: i.id,
-        price: Number(i.price),
-        quantity: Number(i.qty)
-      })),
-      total: Number(total)
-    })
-  })
-  .then(res => {
+/* ================= PLACE ORDER ================= */
+const orderBtn = document.getElementById("orderBtn");
+
+orderBtn.addEventListener("click", async () => {
+  orderBtn.disabled = true;
+  orderBtn.innerText = "Placing order...";
+
+  try {
+    const res = await fetch(API_ORDERS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": USER_ID
+      },
+      body: JSON.stringify({
+        items: cart.map(i => ({
+          product_id: i.id,
+          price: Number(i.price),
+          quantity: Number(i.qty)
+        })),
+        total: Number(total)
+      })
+    });
+
     if (!res.ok) throw new Error("Order failed");
-    return res.json();
-  })
-  .then(data => {
+
+    const data = await res.json();
+
     localStorage.setItem("last_order_id", data.orderId);
     localStorage.removeItem(CART_KEY);
+
     location.href = "success.html";
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Order failed");
-  });
-};
+
+  } catch (err) {
+    console.error("CHECKOUT ERROR:", err);
+    alert("Failed to place order ❌");
+    orderBtn.disabled = false;
+    orderBtn.innerText = "Place Order";
+  }
+});
 </script>
+
+
 
 
 </body>
