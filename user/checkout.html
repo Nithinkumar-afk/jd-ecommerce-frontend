@@ -25,7 +25,6 @@ body{
   min-height:100vh;
 }
 
-/* HEADER */
 header{
   display:flex;
   align-items:center;
@@ -43,7 +42,6 @@ header h2{
   cursor:pointer;
 }
 
-/* LAYOUT */
 .container{
   max-width:1200px;
   margin:auto;
@@ -53,7 +51,6 @@ header h2{
   gap:22px;
 }
 
-/* CARD */
 .card{
   background:#0f0f0f;
   border:1px solid var(--border);
@@ -66,7 +63,6 @@ header h2{
   margin-bottom:16px;
 }
 
-/* FORM */
 label{
   font-size:12px;
   opacity:.7;
@@ -85,7 +81,6 @@ input{
   outline:none;
 }
 
-/* ADDRESS */
 .address-card{
   padding:14px;
   border-radius:16px;
@@ -95,7 +90,6 @@ input{
   margin-bottom:12px;
 }
 
-/* BUTTON */
 .place-order{
   width:100%;
   padding:14px;
@@ -108,7 +102,6 @@ input{
   margin-top:12px;
 }
 
-/* SUMMARY */
 .summary-item{
   display:flex;
   justify-content:space-between;
@@ -126,7 +119,6 @@ input{
   color:var(--success);
 }
 
-/* RESPONSIVE */
 @media(max-width:1024px){
   .container{grid-template-columns:1fr}
 }
@@ -173,131 +165,111 @@ input{
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* ================= CONFIG ================= */
-  const BASE_URL =
-    window.APP_CONFIG?.API_BASE ||
-    "https://jd-backend-production.up.railway.app";
-
-  // ✅ CORRECT ENDPOINTS
+  const BASE_URL = window.APP_CONFIG.API_BASE;
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
-  /* ================= AUTH ================= */
   const USER_ID = localStorage.getItem("jd_user_id");
-
   if (!USER_ID) {
-    alert("Please login to continue");
+    alert("Please login first");
     location.href = "../index.html";
     return;
   }
 
-  /* ================= CART ================= */
   const CART_KEY = "jd_cart";
   const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
   if (cart.length === 0) {
-    alert("Your cart is empty");
+    alert("Cart is empty");
     location.href = "cart.html";
     return;
   }
 
-  /* ================= ELEMENTS ================= */
   const nameInput   = document.getElementById("name");
   const phoneInput  = document.getElementById("phone");
   const addressList = document.getElementById("addressList");
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  /* ================= LOAD USER PROFILE ================= */
-  fetch(API_PROFILE, {
-    headers: {
-      "x-user-id": USER_ID
-    }
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Profile fetch failed");
-    return res.json();
-  })
-  .then(user => {
-    nameInput.value  = user.name || "";
-    phoneInput.value = user.phone || "";
+  let userAddress = "";
+
+  /* LOAD PROFILE */
+  fetch(API_PROFILE, { headers:{ "x-user-id": USER_ID }})
+  .then(r=>r.json())
+  .then(u=>{
+    nameInput.value = u.name || "";
+    phoneInput.value = u.phone || "";
+    userAddress = u.address || "";
 
     addressList.innerHTML = `
       <div class="address-card">
-        📍 ${user.address || "Address not provided"}
+        📍 ${userAddress || "Address not provided"}
       </div>
     `;
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load user data");
   });
 
-  /* ================= ORDER SUMMARY ================= */
+  /* SUMMARY */
   let total = 0;
-  summaryBox.innerHTML = "";
-
-  cart.forEach(item => {
-    const itemTotal = item.price * item.qty;
-    total += itemTotal;
-
-    summaryBox.insertAdjacentHTML("beforeend", `
+  cart.forEach(i=>{
+    const t = i.price * i.qty;
+    total += t;
+    summaryBox.innerHTML += `
       <div class="summary-item">
-        <span>${item.name} × ${item.qty}</span>
-        <span>₹${itemTotal}</span>
+        <span>${i.name} × ${i.qty}</span>
+        <span>₹${t}</span>
       </div>
-    `);
+    `;
   });
 
-  summaryBox.insertAdjacentHTML("beforeend", `
+  summaryBox.innerHTML += `
     <div class="summary-total">
-      <strong>Total</strong>
-      <strong>₹${total}</strong>
+      <span>Total</span>
+      <span>₹${total}</span>
     </div>
-  `);
+  `;
 
-  /* ================= PLACE ORDER ================= */
-  orderBtn.addEventListener("click", () => {
+  /* PLACE ORDER */
+  orderBtn.onclick = async () => {
+
+    if (!userAddress) {
+      alert("Please add address in profile");
+      return;
+    }
 
     orderBtn.disabled = true;
     orderBtn.textContent = "Placing Order...";
 
-    const orderData = {
-      items: cart.map(item => ({
-        name: item.name,
-        price: item.price,
-        quantity: item.qty
-      })),
-      total
-    };
+    try {
+      const res = await fetch(API_ORDERS,{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "x-user-id": USER_ID
+        },
+        body:JSON.stringify({
+          items: cart.map(i=>({
+            product_id: i.id,   // ✅ FIXED
+            price: i.price,
+            quantity: i.qty
+          })),
+          total
+        })
+      });
 
-    fetch(API_ORDERS, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-user-id": USER_ID
-      },
-      body: JSON.stringify(orderData)
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Order failed");
-      return res.json();
-    })
-    .then(() => {
+      if(!res.ok) throw new Error();
+
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Order failed. Try again.");
+
+    } catch {
+      alert("Order failed");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
-    });
-  });
+    }
+  };
 
 });
 </script>
-
 
 </body>
 </html>
