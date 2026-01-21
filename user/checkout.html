@@ -170,14 +170,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
-  /* ================= USER (NO LOGIN) ================= */
-  const USER_ID =
-    localStorage.getItem("jd_user_id") ||
-    (() => {
-      const id = "guest_" + Date.now();
-      localStorage.setItem("jd_user_id", id);
-      return id;
-    })();
+  /* ================= USER (STRICT) ================= */
+  const USER_ID = localStorage.getItem("jd_user_id");
+
+  if (!USER_ID) {
+    alert("Please complete your profile first");
+    location.href = "profile.html";
+    return;
+  }
 
   /* ================= CART ================= */
   const CART_KEY = "jd_cart";
@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  let userProfile = {};
+  let userProfile = null;
 
   /* ================= LOAD PROFILE (AUTO-FILL) ================= */
   try {
@@ -204,25 +204,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       headers: { "x-user-id": USER_ID }
     });
 
-    if (res.ok) {
-      userProfile = await res.json();
-    }
+    if (!res.ok) throw new Error("Profile not found");
 
+    userProfile = await res.json();
+
+    /* AUTO-FILL */
     nameInput.value  = userProfile.name || "";
     phoneInput.value = userProfile.phone || "";
 
     addressList.innerHTML = `
       <div class="address-card">
-        📍 ${userProfile.address || "Address not provided"}
+        📍 ${userProfile.address}
       </div>
     `;
 
-  } catch {
-    addressList.innerHTML = `
-      <div class="address-card">
-        📍 Address not provided
-      </div>
-    `;
+  } catch (err) {
+    alert("Please complete your profile before checkout");
+    location.href = "profile.html";
+    return;
   }
 
   /* ================= ORDER SUMMARY ================= */
@@ -230,13 +229,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   summaryBox.innerHTML = "";
 
   cart.forEach(i => {
-    const t = Number(i.price) * Number(i.qty);
-    total += t;
+    const itemTotal = Number(i.price) * Number(i.qty);
+    total += itemTotal;
 
     summaryBox.insertAdjacentHTML("beforeend", `
       <div class="summary-item">
         <span>${i.name} × ${i.qty}</span>
-        <span>₹${t}</span>
+        <span>₹${itemTotal}</span>
       </div>
     `);
   });
@@ -251,12 +250,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ================= PLACE ORDER ================= */
   orderBtn.onclick = async () => {
 
-    if (!userProfile.address) {
-      alert("Please complete your profile before ordering");
-      location.href = "profile.html";
-      return;
-    }
-
     orderBtn.disabled = true;
     orderBtn.textContent = "Placing Order...";
 
@@ -267,7 +260,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           price: Number(i.price),
           qty: Number(i.qty)
         })),
-        total: Number(total)
+        total: total
       };
 
       const res = await fetch(API_ORDERS, {
@@ -286,7 +279,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       location.href = "success.html";
 
     } catch (err) {
-      alert(err?.error || "Failed to place order");
+      alert(err?.error || "Order failed");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
     }
@@ -294,7 +287,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 </script>
-
 
 </body>
 </html>
