@@ -166,55 +166,61 @@ button{
 "use strict";
 
 /* ================= CONFIG ================= */
-const BASE_URL = window.APP_CONFIG?.API_BASE ||
-  "https://jd-backend-production.up.railway.app";
+const BASE_URL = window.APP_CONFIG.API_BASE;
 const API_PROFILE = BASE_URL + "/api/profile";
 
-/* ================= USER ID (FIXED) ================= */
+/* ================= ELEMENTS ================= */
+const nameI     = document.getElementById("name");
+const phoneI    = document.getElementById("phone");
+const altPhoneI = document.getElementById("altPhone");
+const addressI  = document.getElementById("address");
+const imageI    = document.getElementById("imageInput");
+const img       = document.getElementById("profileImage");
+const avatar    = document.getElementById("avatar");
+const saveBtn   = document.getElementById("saveBtn");
+
+/* ================= USER ID ================= */
+/*
+  RULE:
+  - USER_ID = phone number
+  - same phone → same user → same profile everywhere
+*/
 let USER_ID = localStorage.getItem("jd_user_id");
 
-if (!USER_ID) {
-  USER_ID = "jd_" + crypto.randomUUID();
-  localStorage.setItem("jd_user_id", USER_ID);
+/* ================= LOAD PROFILE ================= */
+if (USER_ID) {
+  fetch(API_PROFILE, {
+    headers: { "x-user-id": USER_ID }
+  })
+  .then(r => r.ok ? r.json() : null)
+  .then(user => {
+    if (!user) return;
+
+    nameI.value     = user.name || "";
+    phoneI.value    = user.phone || "";
+    altPhoneI.value = user.alt_phone || "";
+    addressI.value  = user.address || "";
+
+    if (user.image) {
+      img.src = BASE_URL + user.image + "?t=" + Date.now();
+      img.hidden = false;
+      avatar.hidden = true;
+    }
+  })
+  .catch(()=>{});
 }
 
-/* ================= ELEMENTS ================= */
-const nameI = document.getElementById("name");
-const phoneI = document.getElementById("phone");
-const altPhoneI = document.getElementById("altPhone");
-const addressI = document.getElementById("address");
-const imageI = document.getElementById("imageInput");
-const img = document.getElementById("profileImage");
-const avatar = document.getElementById("avatar");
-
-/* ================= LOAD PROFILE ================= */
-fetch(API_PROFILE, {
-  headers: { "x-user-id": USER_ID }
-})
-.then(r => r.ok ? r.json() : null)
-.then(user => {
-  if (!user) return;
-
-  nameI.value = user.name || "";
-  phoneI.value = user.phone || "";
-  altPhoneI.value = user.alt_phone || "";
-  addressI.value = user.address || "";
-
-  if (user.image) {
-    img.src = BASE_URL + user.image + "?t=" + Date.now();
-    img.hidden = false;
-    avatar.hidden = true;
-  }
-})
-.catch(()=>{});
-
 /* ================= SAVE PROFILE ================= */
-document.getElementById("saveBtn").onclick = () => {
+saveBtn.onclick = () => {
 
   if (!nameI.value || !phoneI.value || !addressI.value) {
-    alert("Fill all required fields");
+    alert("Please fill all required fields");
     return;
   }
+
+  /* 🔥 PHONE-BASED USER ID (FIX) */
+  USER_ID = "jd_user_" + phoneI.value.trim();
+  localStorage.setItem("jd_user_id", USER_ID);
 
   const fd = new FormData();
   fd.append("name", nameI.value);
@@ -222,31 +228,35 @@ document.getElementById("saveBtn").onclick = () => {
   fd.append("altPhone", altPhoneI.value);
   fd.append("address", addressI.value);
 
-  if (imageI.files[0]) fd.append("image", imageI.files[0]);
+  if (imageI.files[0]) {
+    fd.append("image", imageI.files[0]);
+  }
 
   fetch(API_PROFILE, {
-    method:"POST",
-    headers:{ "x-user-id": USER_ID },
-    body:fd
+    method: "POST",
+    headers: { "x-user-id": USER_ID },
+    body: fd
   })
-  .then(r=>r.ok ? r.json():Promise.reject())
-  .then(()=>{
-    alert("Profile saved ✅");
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(() => {
+    alert("Profile saved successfully ✅");
+
     if (imageI.files[0]) {
       img.src = URL.createObjectURL(imageI.files[0]);
       img.hidden = false;
       avatar.hidden = true;
     }
   })
-  .catch(()=>alert("Save failed ❌"));
+  .catch(() => alert("Failed to save profile ❌"));
 };
 
 /* ================= LOGOUT ================= */
-function logout(){
+function logout() {
   localStorage.removeItem("jd_user_id");
-  location.href="../index.html";
+  location.href = "../index.html";
 }
 </script>
+
 
 </body>
 </html>
