@@ -165,10 +165,11 @@ input{
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  const BASE_URL   = window.APP_CONFIG.API_BASE;
+  const BASE_URL    = window.APP_CONFIG.API_BASE;
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
+  /* ================= AUTH CHECK ================= */
   const USER_ID = localStorage.getItem("jd_user_id");
   if (!USER_ID) {
     alert("Please login first");
@@ -176,15 +177,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  /* ================= CART ================= */
   const CART_KEY = "jd_cart";
   const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-  if (!cart.length) {
+  if (!Array.isArray(cart) || cart.length === 0) {
     alert("Cart is empty");
     location.href = "cart.html";
     return;
   }
 
+  /* ================= ELEMENTS ================= */
   const nameInput   = document.getElementById("name");
   const phoneInput  = document.getElementById("phone");
   const addressList = document.getElementById("addressList");
@@ -197,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch(API_PROFILE, {
     headers: { "x-user-id": USER_ID }
   })
-  .then(r => r.json())
+  .then(r => r.ok ? r.json() : Promise.reject())
   .then(u => {
     nameInput.value  = u.name || "";
     phoneInput.value = u.phone || "";
@@ -208,23 +211,38 @@ document.addEventListener("DOMContentLoaded", () => {
         📍 ${userAddress || "Address not provided"}
       </div>
     `;
+  })
+  .catch(() => {
+    addressList.innerHTML =
+      `<div class="address-card">❌ Failed to load address</div>`;
   });
 
-  /* ================= SUMMARY ================= */
+  /* ================= ORDER SUMMARY ================= */
   let total = 0;
   summaryBox.innerHTML = "";
 
   cart.forEach(i => {
-    const t = Number(i.price) * Number(i.qty);
-    total += t;
+    const price = Number(i.price) || 0;
+    const qty   = Number(i.qty) || 1;
+    const lineTotal = price * qty;
+
+    if (price <= 0 || qty <= 0) return;
+
+    total += lineTotal;
 
     summaryBox.innerHTML += `
       <div class="summary-item">
-        <span>${i.name} × ${i.qty}</span>
-        <span>₹${t}</span>
+        <span>${i.name} × ${qty}</span>
+        <span>₹${lineTotal}</span>
       </div>
     `;
   });
+
+  if (total <= 0) {
+    alert("Invalid cart data");
+    location.href = "cart.html";
+    return;
+  }
 
   summaryBox.innerHTML += `
     <div class="summary-total">
@@ -247,9 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const payload = {
         items: cart.map(i => ({
-          name: i.name,                 // ✅ REQUIRED
-          price: Number(i.price),       // ✅ REQUIRED
-          qty: Number(i.qty)            // ✅ REQUIRED
+          name: i.name,
+          price: Number(i.price),
+          qty: Number(i.qty) || 1
         })),
         total: Number(total)
       };
@@ -273,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error("ORDER ERROR:", err);
-      alert(err.error || "Failed to place order");
+      alert(err?.error || "Failed to place order");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
     }
