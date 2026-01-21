@@ -28,7 +28,8 @@ body{
   border:1px solid rgba(255,255,255,.12);
 }
 .success{text-align:center}
-.success h1{color:#22c55e}
+.success h1{color:#22c55e;margin-bottom:10px}
+.success p{margin-top:6px}
 .item{
   background:rgba(255,255,255,.08);
   padding:16px;
@@ -67,13 +68,17 @@ body{
 <div class="container">
   <div class="success">
     <h1>✅ Order Placed Successfully</h1>
+
+    <!-- Added details -->
     <p>Order ID: <b>#<span id="orderId"></span></b></p>
+    <p>Total: ₹<span id="orderTotal"></span></p>
+    <p>Status: <span id="orderStatus"></span></p>
   </div>
 
   <div id="orderItems"></div>
 
   <div class="total">
-    Total Paid: ₹<span id="orderTotal"></span>
+    Total Paid: ₹<span id="orderTotalFooter"></span>
   </div>
 
   <div class="actions">
@@ -82,45 +87,47 @@ body{
   </div>
 </div>
 
+<script src="../config.js"></script>
 <script>
 "use strict";
 
-/* ================= AUTH CHECK ================= */
-const USER_ID = localStorage.getItem("jd_user_id");
-if (!USER_ID) {
-  alert("Please login first");
-  location.href = "../index.html";
-}
+document.addEventListener("DOMContentLoaded", async () => {
 
-/* ================= LOAD LAST ORDER ================= */
-const orderId   = localStorage.getItem("last_order_id");
-const items     = JSON.parse(localStorage.getItem("last_order_items")) || [];
-const total     = localStorage.getItem("last_order_total");
+  const BASE_URL = window.APP_CONFIG.API_BASE;
+  const API_ORDERS = BASE_URL + "/api/orders";
 
-if (!orderId || !items.length) {
-  alert("No recent order found");
-  location.href = "../index.html";
-}
+  const USER_ID = localStorage.getItem("jd_user_id");
 
-/* ================= RENDER ================= */
-document.getElementById("orderId").textContent = orderId;
-document.getElementById("orderTotal").textContent = total;
+  if (!USER_ID) {
+    alert("User not found");
+    location.href = "index.html";
+    return;
+  }
 
-const orderItemsBox = document.getElementById("orderItems");
-orderItemsBox.innerHTML = "";
+  try {
+    const res = await fetch(API_ORDERS, {
+      headers: { "x-user-id": USER_ID }
+    });
 
-items.forEach(i => {
-  orderItemsBox.innerHTML += `
-    <div class="item">
-      <span>${i.name} × ${i.qty}</span>
-      <span>₹${i.price * i.qty}</span>
-    </div>
-  `;
+    const orders = await res.json();
+
+    if (!Array.isArray(orders) || orders.length === 0) {
+      alert("No recent order found");
+      return;
+    }
+
+    const order = orders[0]; // latest order
+
+    document.getElementById("orderId").textContent = order.id;
+    document.getElementById("orderTotal").textContent = order.total_amount;
+    document.getElementById("orderTotalFooter").textContent = order.total_amount;
+    document.getElementById("orderStatus").textContent = order.status;
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load order");
+  }
 });
-
-/* ================= CLEAN TEMP DATA ================= */
-localStorage.removeItem("last_order_items");
-localStorage.removeItem("last_order_total");
 </script>
 
 </body>
