@@ -178,18 +178,8 @@ document.addEventListener("DOMContentLoaded", () => {
     window.APP_CONFIG?.API_BASE ||
     "https://jd-backend-production.up.railway.app";
 
-  // ✅ CORRECT ENDPOINTS
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
-
-  /* ================= AUTH ================= */
-  const USER_ID = localStorage.getItem("jd_user_id");
-
-  if (!USER_ID) {
-    alert("Please login to continue");
-    location.href = "../index.html";
-    return;
-  }
 
   /* ================= CART ================= */
   const CART_KEY = "jd_cart";
@@ -208,30 +198,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  /* ================= LOAD USER PROFILE ================= */
-  fetch(API_PROFILE, {
-    headers: {
-      "x-user-id": USER_ID
-    }
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Profile fetch failed");
-    return res.json();
-  })
-  .then(user => {
-    nameInput.value  = user.name || "";
-    phoneInput.value = user.phone || "";
+  /* ================= DEFAULT USER DATA ================= */
+  nameInput.value = "";
+  phoneInput.value = "";
 
-    addressList.innerHTML = `
-      <div class="address-card">
-        📍 ${user.address || "Address not provided"}
-      </div>
-    `;
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load user data");
-  });
+  addressList.innerHTML = `
+    <div class="address-card">
+      📍 Enter your delivery address
+    </div>
+  `;
 
   /* ================= ORDER SUMMARY ================= */
   let total = 0;
@@ -259,10 +234,19 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ================= PLACE ORDER ================= */
   orderBtn.addEventListener("click", () => {
 
+    if (!nameInput.value || !phoneInput.value) {
+      alert("Please fill all details");
+      return;
+    }
+
     orderBtn.disabled = true;
     orderBtn.textContent = "Placing Order...";
 
     const orderData = {
+      customer: {
+        name: nameInput.value,
+        phone: phoneInput.value
+      },
       items: cart.map(item => ({
         name: item.name,
         price: item.price,
@@ -274,8 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch(API_ORDERS, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-user-id": USER_ID
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(orderData)
     })
@@ -297,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
+
 
 
 </body>
