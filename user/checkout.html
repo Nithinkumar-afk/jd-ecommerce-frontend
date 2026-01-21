@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const CART_KEY = "jd_cart";
   const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-  if (cart.length === 0) {
+  if (!cart.length) {
     alert("Cart is empty");
     location.href = "cart.html";
     return;
@@ -194,12 +194,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let userAddress = "";
 
   /* LOAD PROFILE */
-  fetch(API_PROFILE, { headers:{ "x-user-id": USER_ID }})
+  fetch(API_PROFILE, { headers: { "x-user-id": USER_ID }})
     .then(r => r.json())
     .then(u => {
-      nameInput.value  = u.name || "";
+      nameInput.value = u.name || "";
       phoneInput.value = u.phone || "";
-      userAddress      = u.address || "";
+      userAddress = u.address || "";
 
       addressList.innerHTML = `
         <div class="address-card">
@@ -210,8 +210,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /* SUMMARY */
   let total = 0;
+  summaryBox.innerHTML = "";
+
   cart.forEach(i => {
-    const t = i.price * i.qty;
+    const t = Number(i.price) * Number(i.qty);
     total += t;
 
     summaryBox.innerHTML += `
@@ -224,12 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   summaryBox.innerHTML += `
     <div class="summary-total">
-      <span>Total</span>
-      <span>₹${total}</span>
+      <strong>Total</strong>
+      <strong>₹${total}</strong>
     </div>
   `;
 
-  /* ✅ FIXED PLACE ORDER */
+  /* PLACE ORDER */
   orderBtn.onclick = async () => {
 
     if (!userAddress) {
@@ -241,20 +243,24 @@ document.addEventListener("DOMContentLoaded", () => {
     orderBtn.textContent = "Placing Order...";
 
     try {
+      const payload = {
+        items: cart.map(i => ({
+          product_id: i.product_id,   // 🔥 MUST EXIST
+          price: Number(i.price),
+          quantity: Number(i.qty)
+        })),
+        total: Number(total)
+      };
+
+      console.log("ORDER PAYLOAD:", payload);
+
       const res = await fetch(API_ORDERS, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-user-id": USER_ID
         },
-        body: JSON.stringify({
-          items: cart.map(i => ({
-            product_id: i.product_id || i.id, // ✅ SAFE
-            price: Number(i.price),
-            quantity: Number(i.qty)
-          })),
-          total: Number(total)
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -265,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error("ORDER ERROR:", err);
-      alert(err.error || "Order failed");
+      alert(err.error || "Failed to place order");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
     }
