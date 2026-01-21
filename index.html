@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JD Store</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-
-<script src="config.js" defer></script>
+<script src="config.js"></script>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -24,35 +21,57 @@
 #splash{
   position:fixed;
   inset:0;
-  background:#000;
+  background:black;
   display:flex;
   align-items:center;
   justify-content:center;
   z-index:9999;
-  transition:opacity .5s ease;
+  transition:opacity .6s ease, visibility .6s ease;
 }
-#splash.hide{opacity:0;pointer-events:none}
+#splash.hide{
+  opacity:0;
+  visibility:hidden;
+}
 
-/* ================= APP ================= */
+/* SATURN RING */
+.ring{
+  transform-origin:50% 50%;
+  transform-box:fill-box;
+  will-change:transform;
+  animation:saturnInclined 72s linear infinite;
+}
+@keyframes saturnInclined{
+  0%{transform:rotate(-16deg) rotateZ(0deg) scaleY(.82)}
+  25%{transform:rotate(-15.4deg) rotateZ(90deg) scaleY(.96)}
+  50%{transform:rotate(-16.8deg) rotateZ(180deg) scaleY(.82)}
+  75%{transform:rotate(-15.6deg) rotateZ(270deg) scaleY(.96)}
+  100%{transform:rotate(-16deg) rotateZ(360deg) scaleY(.82)}
+}
+
+/* ================= MAIN APP ================= */
 body{
   font-family:Poppins,sans-serif;
   background:radial-gradient(circle at top,#0b0b0b,#000);
   color:#fff;
+  min-height:100vh;
 }
-#app{opacity:0;transition:opacity .5s ease}
+#app{
+  opacity:0;
+  transition:opacity .6s ease;
+}
 #app.show{opacity:1}
 
 /* HEADER */
 header{
   display:flex;
-  align-items:center;
   justify-content:space-between;
-  padding:14px 24px;
+  align-items:center;
+  padding:15px 28px;
   border-bottom:1px solid var(--border);
   backdrop-filter:blur(14px);
   position:sticky;
   top:0;
-  z-index:10;
+  z-index:50;
 }
 .logo{font-size:22px;font-weight:600}
 .logo span{color:var(--primary)}
@@ -66,25 +85,68 @@ header{
   color:#fff;
   outline:none;
 }
-.header-right{display:flex;gap:12px;align-items:center}
+.header-right{display:flex;gap:14px;align-items:center}
+
+/* PROFILE */
+.profile-wrapper{position:relative}
+.profile-btn{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px 14px;
+  border-radius:999px;
+  background:var(--glass);
+  border:1px solid var(--border);
+  cursor:pointer;
+}
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:600;
+  overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.profile-menu{
+  position:absolute;
+  top:55px;
+  right:0;
+  min-width:180px;
+  background:#0f0f0f;
+  border:1px solid var(--border);
+  border-radius:14px;
+  display:none;
+  flex-direction:column;
+}
+.profile-menu button{
+  padding:12px 16px;
+  background:none;
+  border:none;
+  color:white;
+  text-align:left;
+  cursor:pointer;
+}
+.profile-menu button:hover{background:rgba(255,255,255,.06)}
+.profile-menu .logout{color:#ff6b6b}
+
+/* CART */
 .cart,.checkout{
   padding:10px 18px;
   border-radius:999px;
-  background:linear-gradient(135deg,var(--primary),var(--primary2));
   border:none;
-  color:#fff;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:white;
   cursor:pointer;
   text-decoration:none;
   font-size:14px;
 }
-.cart span{margin-left:6px}
 
 /* PRODUCTS */
-.container{padding:24px}
+.container{padding:26px}
 .products{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-  gap:20px;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:22px;
 }
 .product{
   background:#0f0f0f;
@@ -94,11 +156,10 @@ header{
   display:flex;
   flex-direction:column;
   gap:10px;
-  transition:transform .25s ease;
 }
-.product:hover{transform:translateY(-4px)}
 .img-box{
-  height:210px;
+  width:100%;
+  height:220px;
   border-radius:14px;
   overflow:hidden;
   cursor:pointer;
@@ -107,7 +168,7 @@ header{
   width:100%;
   height:100%;
   object-fit:cover;
-  transition:transform .3s ease;
+  transition:.3s;
 }
 .product:hover img{transform:scale(1.05)}
 .cart-btn{
@@ -116,14 +177,14 @@ header{
   border-radius:12px;
   border:none;
   background:linear-gradient(135deg,var(--primary),var(--primary2));
-  color:#fff;
+  color:white;
   cursor:pointer;
 }
 
 /* TOAST */
 .toast{
   position:fixed;
-  bottom:28px;
+  bottom:30px;
   left:50%;
   transform:translateX(-50%);
   background:#111;
@@ -170,17 +231,40 @@ header{
 
 <!-- SPLASH -->
 <div id="splash">
-  <h1 style="font-weight:600;letter-spacing:4px">JD</h1>
+<svg width="420" viewBox="0 0 600 520" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="jdGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#4fb6e8"/>
+    <stop offset="100%" stop-color="#0b2d55"/>
+  </linearGradient>
+  <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#8ccfe8"/>
+    <stop offset="100%" stop-color="#244a7a"/>
+  </linearGradient>
+</defs>
+
+<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
+ fill="none" stroke="url(#ringGrad)" stroke-width="28" opacity=".55"/>
+
+<path d="M180 90 V350 C180 410 135 445 90 445 C45 445 40 410 40 410
+V380 C40 380 75 395 100 380 C120 368 120 345 120 325 V90
+H305 C445 90 520 180 520 260 C520 340 445 430 305 430 H180 Z
+M285 160 V360 H310 C385 360 430 315 430 260 C430 205 385 160 310 160 Z"
+fill="url(#jdGrad)" stroke="white" stroke-width="16"/>
+
+<ellipse class="ring" cx="320" cy="235" rx="265" ry="82"
+ fill="none" stroke="white" stroke-width="10" opacity=".9"/>
+</svg>
 </div>
 
 <!-- APP -->
 <div id="app">
 <header>
   <div class="logo"><span>J</span>D</div>
-  <input id="search" placeholder="Search products" />
+  <input id="search" placeholder="Search products">
   <div class="header-right">
     <a href="user/checkout.html" class="checkout">Checkout</a>
-    <button class="cart">Cart <span id="cartCount">0</span></button>
+    <button class="cart">Cart</button>
   </div>
 </header>
 
@@ -189,53 +273,69 @@ header{
 </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <span class="close" onclick="closeModal()">✕</span>
-    <img id="modalImg">
-    <h3 id="modalName"></h3>
-    <p id="modalPrice"></p>
-    <p id="modalDesc"></p>
-  </div>
-</div>
-
-<script defer>
-"use strict";
-
-/* SPLASH */
+<script>
+/* SPLASH CONTROL */
 window.addEventListener("load",()=>{
   setTimeout(()=>{
     splash.classList.add("hide");
     app.classList.add("show");
-  },1200);
+  },2500);
 });
+</script>
+
+<script>
+"use strict";
 
 /* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
+const API_PRODUCTS = API + "/api/products?ts=" + Date.now();
+const API_PROFILE = API + "/api/profile";
 const FALLBACK = "https://via.placeholder.com/300x200";
 
 /* STATE */
-let productsData=[];
-let cart = JSON.parse(localStorage.getItem("jd_cart"))||[];
+let productsData = [];
+let cart = JSON.parse(localStorage.getItem("jd_cart")) || [];
+const USER_ID = localStorage.getItem("jd_user_id");
 
 /* ELEMENTS */
 const products = document.getElementById("products");
-const search = document.getElementById("search");
 const cartCount = document.getElementById("cartCount");
+const search = document.getElementById("search");
 const toast = document.getElementById("toast");
 const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
 const modalDesc = document.getElementById("modalDesc");
+const profileMenu = document.getElementById("profileMenu");
+const profileBtn = document.getElementById("profileBtn");
+const avatar = document.getElementById("avatar");
+const profileName = document.getElementById("profileName");
+
+/* LOAD PROFILE (ADDED) */
+if (USER_ID) {
+  fetch(API_PROFILE + "?t=" + Date.now(), {
+    headers: { "x-user-id": USER_ID }
+  })
+  .then(r => r.json())
+  .then(u => {
+    profileName.textContent = u.name || "User";
+
+    if (u.image) {
+      avatar.innerHTML =
+        `<img src="${API + u.image}?v=${Date.now()}">`;
+    } else {
+      avatar.textContent = (u.name || "U")[0].toUpperCase();
+    }
+  })
+  .catch(()=>{});
+}
 
 /* CART COUNT */
-function updateCart(){
+function updateCartCount(){
   cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
 }
-updateCart();
+updateCartCount();
 
 /* TOAST */
 function showToast(msg){
@@ -244,61 +344,84 @@ function showToast(msg){
   setTimeout(()=>toast.classList.remove("show"),2000);
 }
 
-/* LOAD PRODUCTS */
-fetch(API+"/api/products")
-.then(r=>r.json())
-.then(d=>{
-  productsData = Array.isArray(d)?d:[];
-  render();
-});
+/* PROFILE MENU */
+profileBtn.onclick = (e) => {
+  e.stopPropagation();
+  profileMenu.style.display =
+    profileMenu.style.display==="flex"?"none":"flex";
+};
+profileMenu.onclick = e => e.stopPropagation();
+document.onclick = () => profileMenu.style.display = "none";
 
-/* RENDER */
-function render(){
+/* LOGOUT */
+function logout(){
+  localStorage.clear();
+  location.reload();
+}
+
+/* LOAD PRODUCTS */
+fetch(API_PRODUCTS)
+  .then(r=>r.json())
+  .then(d=>{
+    productsData = Array.isArray(d)?d:[];
+    renderProducts();
+  })
+  .catch(()=>{
+    products.innerHTML="<p>Failed to load products</p>";
+  });
+
+function renderProducts(){
   const q = search.value.toLowerCase();
   products.innerHTML="";
   productsData
     .filter(p=>p.name.toLowerCase().includes(q))
     .forEach(p=>{
+      const img = p.image ? API + p.image : FALLBACK;
       products.insertAdjacentHTML("beforeend",`
         <div class="product">
-          <div class="img-box" data-id="${p.id}">
-            <img loading="lazy" src="${p.image?API+p.image:FALLBACK}">
+          <div class="img-box" onclick="openModal(${p.id})">
+            <img src="${img}" onerror="this.src='${FALLBACK}'">
           </div>
           <h3>${p.name}</h3>
           <p>₹${p.price}</p>
-          <button class="cart-btn" data-cart="${p.id}">Add to Cart</button>
+          <button class="cart-btn" onclick="addToCart(${p.id})">
+            Add to Cart
+          </button>
         </div>
       `);
     });
 }
 
-/* EVENTS */
-products.onclick = e => {
-  const id = e.target.dataset.id || e.target.dataset.cart;
-  if(!id) return;
+/* CART */
+function addToCart(id){
+  if(cart.find(i=>i.id===id)){
+    showToast("Already in cart");
+    return;
+  }
+  const p = productsData.find(p=>p.id===id);
+  if(!p) return;
+  cart.push({...p,qty:1});
+  localStorage.setItem("jd_cart",JSON.stringify(cart));
+  updateCartCount();
+  showToast("Added to cart 🛒");
+}
 
-  const p = productsData.find(x=>x.id==id);
+/* MODAL */
+function openModal(id){
+  const p = productsData.find(p=>p.id===id);
   if(!p) return;
 
-  if(e.target.dataset.cart){
-    if(cart.find(i=>i.id==id)) return showToast("Already in cart");
-    cart.push({...p,qty:1});
-    localStorage.setItem("jd_cart",JSON.stringify(cart));
-    updateCart();
-    showToast("Added to cart 🛒");
-  }else{
-    modal.style.display="flex";
-    modalImg.src = p.image?API+p.image:FALLBACK;
-    modalName.textContent = p.name;
-    modalPrice.textContent = "₹"+p.price;
-    modalDesc.textContent = p.description || "No description available.";
-  }
-};
-
+  modal.style.display="flex";
+  modalImg.src = p.image ? API + p.image : FALLBACK;
+  modalName.textContent = p.name;
+  modalPrice.textContent = "₹"+p.price;
+  modalDesc.textContent =
+    p.description || "No description available for this product.";
+}
 function closeModal(){ modal.style.display="none"; }
 modal.onclick = e => { if(e.target===modal) closeModal(); };
 
-search.oninput = render;
+search.oninput = renderProducts;
 </script>
 
 </body>
