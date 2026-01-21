@@ -179,8 +179,24 @@ const img       = document.getElementById("profileImage");
 const avatar    = document.getElementById("avatar");
 const saveBtn   = document.getElementById("saveBtn");
 
+/* ================= IMAGE SMOOTH SETUP ================= */
+img.style.opacity = "0";
+img.style.transition = "opacity .3s ease";
+
 /* ================= USER ID ================= */
 let USER_ID = localStorage.getItem("jd_user_id");
+
+/* ================= FAST IMAGE LOADER ================= */
+function loadImageSmooth(src){
+  const pre = new Image();
+  pre.src = src;
+  pre.onload = () => {
+    img.src = src;
+    img.hidden = false;
+    avatar.hidden = true;
+    requestAnimationFrame(() => img.style.opacity = "1");
+  };
+}
 
 /* ================= LOAD PROFILE ================= */
 if (USER_ID) {
@@ -197,15 +213,14 @@ if (USER_ID) {
     addressI.value  = user.address || "";
 
     if (user.image) {
-      img.src = BASE_URL + user.image + "?t=" + Date.now();
-      img.hidden = false;
-      avatar.hidden = true;
+      const imageURL = BASE_URL + user.image + "?t=" + Date.now();
+      loadImageSmooth(imageURL);
     }
   })
   .catch(()=>{});
 }
 
-/* ================= SAVE PROFILE (FIXED) ================= */
+/* ================= SAVE PROFILE (FIXED + SMOOTH IMAGE) ================= */
 saveBtn.onclick = async () => {
 
   if (!nameI.value || !phoneI.value || !addressI.value) {
@@ -236,9 +251,8 @@ saveBtn.onclick = async () => {
     alert("Profile saved successfully ✅");
 
     if (imageI.files[0]) {
-      img.src = URL.createObjectURL(imageI.files[0]);
-      img.hidden = false;
-      avatar.hidden = true;
+      img.style.opacity = "0";
+      loadImageSmooth(URL.createObjectURL(imageI.files[0]));
     }
 
   } catch {
@@ -252,6 +266,7 @@ function logout() {
   location.href = "../index.html";
 }
 </script>
+
 
 </body>
 </html>

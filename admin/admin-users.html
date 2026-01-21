@@ -98,6 +98,7 @@ header a{
   overflow:hidden;
   flex-shrink:0;
   border:1px solid var(--border);
+  cursor:pointer;
 }
 
 .user-img img{
@@ -114,6 +115,38 @@ header a{
 
 .user-info strong{
   color:#fff;
+}
+
+/* ================= IMAGE POPUP ================= */
+.img-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+}
+
+.img-modal img{
+  max-width:90%;
+  max-height:90%;
+  border-radius:20px;
+  border:1px solid var(--border);
+  animation:zoom .25s ease;
+}
+
+.img-modal span{
+  position:absolute;
+  top:20px;
+  right:26px;
+  font-size:26px;
+  cursor:pointer;
+}
+
+@keyframes zoom{
+  from{ transform:scale(.85); opacity:0 }
+  to{ transform:scale(1); opacity:1 }
 }
 
 /* MOBILE */
@@ -155,6 +188,12 @@ header a{
   <div id="usersList">Loading users...</div>
 </div>
 
+<!-- IMAGE POPUP -->
+<div class="img-modal" id="imgModal">
+  <span onclick="closeImg()">✕</span>
+  <img id="modalImg">
+</div>
+
 <script src="../config.js"></script>
 <script>
 "use strict";
@@ -163,6 +202,40 @@ header a{
 const API_BASE = window.APP_CONFIG.API_BASE;
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
+
+/* ================= IMAGE POPUP ================= */
+const imgModal = document.getElementById("imgModal");
+const modalImg = document.getElementById("modalImg");
+
+function openImg(src){
+  modalImg.src = src;
+  imgModal.style.display = "flex";
+}
+function closeImg(){
+  imgModal.style.display = "none";
+}
+imgModal.onclick = e => {
+  if(e.target === imgModal) closeImg();
+};
+
+/* ================= SMOOTH IMAGE LOADER ================= */
+function loadUserImage(imgEl, src){
+  imgEl.style.opacity = "0";
+  imgEl.style.transition = "opacity .25s ease";
+
+  const pre = new Image();
+  pre.src = src;
+
+  pre.onload = () => {
+    imgEl.src = src;
+    requestAnimationFrame(() => imgEl.style.opacity = "1");
+  };
+
+  pre.onerror = () => {
+    imgEl.src = FALLBACK_IMG;
+    imgEl.style.opacity = "1";
+  };
+}
 
 /* ================= LOAD USERS ================= */
 async function loadUsers() {
@@ -184,15 +257,16 @@ async function loadUsers() {
       return;
     }
 
-    users.forEach(u => {
+    users.forEach((u, i) => {
+      const imgId = `userImg_${i}`;
       const imgSrc = u.image
         ? `${API_BASE}${u.image}?t=${Date.now()}`
         : FALLBACK_IMG;
 
       usersList.insertAdjacentHTML("beforeend", `
         <div class="user-card">
-          <div class="user-img">
-            <img src="${imgSrc}" onerror="this.src='${FALLBACK_IMG}'">
+          <div class="user-img" onclick="openImg('${imgSrc}')">
+            <img id="${imgId}" src="${FALLBACK_IMG}">
           </div>
           <div class="user-info">
             <p><strong>${u.name || "Guest"}</strong></p>
@@ -201,6 +275,9 @@ async function loadUsers() {
           </div>
         </div>
       `);
+
+      const imgEl = document.getElementById(imgId);
+      loadUserImage(imgEl, imgSrc);
     });
 
   } catch (err) {
@@ -213,7 +290,6 @@ async function loadUsers() {
 /* ================= INIT ================= */
 loadUsers();
 </script>
-
 
 </body>
 </html>

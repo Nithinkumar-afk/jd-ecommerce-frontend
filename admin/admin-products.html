@@ -7,7 +7,6 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 
-<!-- GLOBAL CONFIG -->
 <script src="../config.js"></script>
 
 <style>
@@ -123,6 +122,8 @@ textarea{resize:vertical}
   object-fit:cover;
   border-radius:14px;
   background:#111;
+  opacity:0;
+  transition:opacity .25s ease;
 }
 
 .card small{color:var(--muted);margin-top:8px}
@@ -151,7 +152,6 @@ textarea{resize:vertical}
   </div>
 </header>
 
-<!-- ADD PRODUCT -->
 <div class="form">
   <input id="name" placeholder="Product name *">
   <input id="price" type="number" placeholder="Price *">
@@ -160,7 +160,6 @@ textarea{resize:vertical}
   <button id="addBtn">Add Product</button>
 </div>
 
-<!-- PRODUCT LIST -->
 <div class="products" id="list">Loading products...</div>
 
 <script>
@@ -192,6 +191,20 @@ const imageEl = document.getElementById("image");
 const descEl  = document.getElementById("desc");
 const addBtn  = document.getElementById("addBtn");
 
+/* SMOOTH IMAGE LOADER */
+function loadImageSmooth(imgEl, src){
+  const pre = new Image();
+  pre.src = src;
+  pre.onload = ()=>{
+    imgEl.src = src;
+    requestAnimationFrame(()=>imgEl.style.opacity="1");
+  };
+  pre.onerror = ()=>{
+    imgEl.src = FALLBACK;
+    imgEl.style.opacity="1";
+  };
+}
+
 /* LOAD PRODUCTS */
 async function loadProducts(){
   list.textContent = "Loading products...";
@@ -207,17 +220,21 @@ async function loadProducts(){
       return;
     }
 
-    data.forEach(p=>{
-      const img = p.image ? BASE + p.image : FALLBACK;
+    data.forEach((p,i)=>{
+      const imgSrc = p.image ? BASE + p.image : FALLBACK;
+      const imgId = "prodImg_" + i;
+
       list.insertAdjacentHTML("beforeend",`
         <div class="card">
-          <img src="${img}" onerror="this.src='${FALLBACK}'">
+          <img id="${imgId}" src="${FALLBACK}">
           <small>ID: ${p.id}</small>
           <strong>${p.name}</strong>
           <p>₹${Number(p.price).toFixed(2)}</p>
           <button onclick="deleteProduct(${p.id})">Delete</button>
         </div>
       `);
+
+      loadImageSmooth(document.getElementById(imgId), imgSrc);
     });
 
   }catch(err){
@@ -272,13 +289,9 @@ async function deleteProduct(id){
   if(!confirm("Delete this product?")) return;
 
   try{
-    const res = await fetch(`${API}/${id}`,{
-      method:"DELETE"
-    });
-
+    const res = await fetch(`${API}/${id}`,{ method:"DELETE" });
     if(!res.ok) throw new Error();
     loadProducts();
-
   }catch(err){
     console.error(err);
     alert("Failed to delete product");
