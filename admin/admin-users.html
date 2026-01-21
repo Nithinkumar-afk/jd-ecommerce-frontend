@@ -155,27 +155,25 @@ header a{
   <div id="usersList">Loading users...</div>
 </div>
 
-<!-- CONFIG -->
 <script src="../config.js"></script>
 
 <script>
 "use strict";
 
-/* ================= CONFIG ================= */
+/* CONFIG */
 const API_BASE = window.APP_CONFIG?.API_BASE || "";
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
-/* ================= LOAD USERS (ADMIN) ================= */
+/* LOAD USERS – NO AUTH + NO CACHE */
 async function loadUsers() {
   try {
     usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
 
-    const res = await fetch(`${API_BASE}/api/admin/users`, {
-      headers: {
-        "x-api-key": window.APP_CONFIG?.ADMIN_API_KEY || ""
-      }
-    });
+    const res = await fetch(
+      `${API_BASE}/api/admin/users?ts=${Date.now()}`,
+      { cache: "no-store" }
+    );
 
     if (!res.ok) throw new Error("API error");
 
@@ -188,31 +186,32 @@ async function loadUsers() {
     }
 
     users.forEach(u => {
-      const imgSrc = u.image ? API_BASE + u.image : FALLBACK_IMG;
+      const imgSrc = u.image
+        ? `${API_BASE}${u.image}?t=${Date.now()}`
+        : FALLBACK_IMG;
 
-      usersList.innerHTML += `
+      usersList.insertAdjacentHTML("beforeend", `
         <div class="user-card">
           <div class="user-img">
             <img src="${imgSrc}" onerror="this.src='${FALLBACK_IMG}'">
           </div>
-
           <div class="user-info">
             <p><strong>${u.name || "Guest"}</strong></p>
             <p>📞 Phone: ${u.phone || "-"}</p>
             <p>🏠 Address: ${u.address || "-"}</p>
           </div>
         </div>
-      `;
+      `);
     });
 
   } catch (err) {
-    console.error("LOAD USERS ERROR:", err);
+    console.error(err);
     usersList.innerHTML =
       "<p style='color:#ff6b6b'>Failed to load users</p>";
   }
 }
 
-/* ================= INIT ================= */
+/* INIT */
 loadUsers();
 </script>
 
