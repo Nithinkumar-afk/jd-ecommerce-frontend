@@ -171,11 +171,14 @@ async function loadUsers() {
   try {
     usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
 
-    const res = await fetch(`${API_BASE}/api/admin/users`, {
-      headers: {
-        "x-api-key": window.APP_CONFIG?.ADMIN_API_KEY || ""
+    const res = await fetch(
+      `${API_BASE}/api/admin/users?t=${Date.now()}`,
+      {
+        headers: {
+          "x-api-key": window.APP_CONFIG?.ADMIN_API_KEY || ""
+        }
       }
-    });
+    );
 
     if (!res.ok) throw new Error("API error");
 
@@ -188,7 +191,9 @@ async function loadUsers() {
     }
 
     users.forEach(u => {
-      const imgSrc = u.image ? API_BASE + u.image : FALLBACK_IMG;
+      const imgSrc = u.image
+        ? `${API_BASE}${u.image}?v=${Date.now()}`
+        : FALLBACK_IMG;
 
       usersList.innerHTML += `
         <div class="user-card">
@@ -214,6 +219,9 @@ async function loadUsers() {
 
 /* ================= INIT ================= */
 loadUsers();
+
+/* ================= AUTO REFRESH (LIVE UPDATE) ================= */
+setInterval(loadUsers, 5000);
 </script>
 
 </body>
