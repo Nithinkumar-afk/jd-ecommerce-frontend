@@ -162,37 +162,58 @@ header a{
 "use strict";
 
 /* ================= CONFIG ================= */
-const API_BASE = window.APP_CONFIG.API_BASE;
+const API_BASE = window.APP_CONFIG?.API_BASE || "";
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
+
+/* ================= SAFETY CHECK ================= */
+if (!usersList) {
+  console.error("usersList element not found");
+}
+
+/* ================= HELPERS ================= */
+function formatDate(date) {
+  if (!date) return "—";
+  try {
+    return new Date(date).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  } catch {
+    return "—";
+  }
+}
 
 /* ================= LOAD USERS ================= */
 async function loadUsers() {
   try {
-    const res = await fetch(API_BASE + "/api/users");
-    if (!res.ok) throw new Error();
+    usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
+
+    const res = await fetch(`${API_BASE}/api/users`);
+    if (!res.ok) throw new Error("API error");
 
     const users = await res.json();
     usersList.innerHTML = "";
 
-    if (!users.length) {
+    if (!Array.isArray(users) || users.length === 0) {
       usersList.innerHTML =
         "<p style='opacity:.6'>No users available</p>";
       return;
     }
 
     users.forEach(u => {
-      const joined =
-        u.created_at
-          ? new Date(u.created_at).toLocaleDateString()
-          : "—";
+      const joined = formatDate(u.created_at);
+      const imgSrc = u.image ? `${API_BASE}${u.image}` : FALLBACK_IMG;
 
       usersList.innerHTML += `
         <div class="user-card">
           <div class="user-img">
-            <img src="${u.image ? API_BASE + u.image : FALLBACK_IMG}"
+            <img src="${imgSrc}"
+                 alt="User"
                  onerror="this.src='${FALLBACK_IMG}'">
           </div>
+
           <div class="user-info">
             <p><strong>${u.name || "Guest User"}</strong></p>
             <p>📞 Phone: ${u.phone || "-"}</p>
@@ -205,7 +226,8 @@ async function loadUsers() {
       `;
     });
 
-  } catch {
+  } catch (err) {
+    console.error("LOAD USERS ERROR:", err);
     usersList.innerHTML =
       "<p style='color:#ff6b6b'>Failed to load users</p>";
   }
