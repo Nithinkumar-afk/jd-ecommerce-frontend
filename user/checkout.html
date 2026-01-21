@@ -25,6 +25,7 @@ body{
   min-height:100vh;
 }
 
+/* HEADER */
 header{
   display:flex;
   align-items:center;
@@ -42,6 +43,7 @@ header h2{
   cursor:pointer;
 }
 
+/* LAYOUT */
 .container{
   max-width:1200px;
   margin:auto;
@@ -51,6 +53,7 @@ header h2{
   gap:22px;
 }
 
+/* CARD */
 .card{
   background:#0f0f0f;
   border:1px solid var(--border);
@@ -63,6 +66,7 @@ header h2{
   margin-bottom:16px;
 }
 
+/* FORM */
 label{
   font-size:12px;
   opacity:.7;
@@ -81,6 +85,7 @@ input{
   outline:none;
 }
 
+/* ADDRESS */
 .address-card{
   padding:14px;
   border-radius:16px;
@@ -90,6 +95,7 @@ input{
   margin-bottom:12px;
 }
 
+/* BUTTON */
 .place-order{
   width:100%;
   padding:14px;
@@ -102,6 +108,7 @@ input{
   margin-top:12px;
 }
 
+/* SUMMARY */
 .summary-item{
   display:flex;
   justify-content:space-between;
@@ -119,6 +126,7 @@ input{
   color:var(--success);
 }
 
+/* RESPONSIVE */
 @media(max-width:1024px){
   .container{grid-template-columns:1fr}
 }
@@ -165,14 +173,20 @@ input{
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  const BASE_URL    = window.APP_CONFIG.API_BASE;
+  /* ================= CONFIG ================= */
+  const BASE_URL =
+    window.APP_CONFIG?.API_BASE ||
+    "https://jd-backend-production.up.railway.app";
+
+  // ✅ CORRECT ENDPOINTS
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
-  /* ================= AUTH CHECK ================= */
+  /* ================= AUTH ================= */
   const USER_ID = localStorage.getItem("jd_user_id");
+
   if (!USER_ID) {
-    alert("Please login first");
+    alert("Please login to continue");
     location.href = "../index.html";
     return;
   }
@@ -181,8 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const CART_KEY = "jd_cart";
   const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
-  if (!Array.isArray(cart) || cart.length === 0) {
-    alert("Cart is empty");
+  if (cart.length === 0) {
+    alert("Your cart is empty");
     location.href = "cart.html";
     return;
   }
@@ -194,114 +208,96 @@ document.addEventListener("DOMContentLoaded", () => {
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  let userAddress = "";
-
-  /* ================= LOAD PROFILE ================= */
+  /* ================= LOAD USER PROFILE ================= */
   fetch(API_PROFILE, {
-    headers: { "x-user-id": USER_ID }
+    headers: {
+      "x-user-id": USER_ID
+    }
   })
-  .then(r => r.ok ? r.json() : Promise.reject())
-  .then(u => {
-    nameInput.value  = u.name || "";
-    phoneInput.value = u.phone || "";
-    userAddress      = u.address || "";
+  .then(res => {
+    if (!res.ok) throw new Error("Profile fetch failed");
+    return res.json();
+  })
+  .then(user => {
+    nameInput.value  = user.name || "";
+    phoneInput.value = user.phone || "";
 
     addressList.innerHTML = `
       <div class="address-card">
-        📍 ${userAddress || "Address not provided"}
+        📍 ${user.address || "Address not provided"}
       </div>
     `;
   })
-  .catch(() => {
-    addressList.innerHTML =
-      `<div class="address-card">❌ Failed to load address</div>`;
+  .catch(err => {
+    console.error(err);
+    alert("Failed to load user data");
   });
 
   /* ================= ORDER SUMMARY ================= */
   let total = 0;
   summaryBox.innerHTML = "";
 
-  cart.forEach(i => {
-    const price = Number(i.price);
-    const qty   = Number(i.qty) || 1;
+  cart.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    total += itemTotal;
 
-    if (price <= 0 || qty <= 0) return;
-
-    const lineTotal = price * qty;
-    total += lineTotal;
-
-    summaryBox.innerHTML += `
+    summaryBox.insertAdjacentHTML("beforeend", `
       <div class="summary-item">
-        <span>${i.name} × ${qty}</span>
-        <span>₹${lineTotal}</span>
+        <span>${item.name} × ${item.qty}</span>
+        <span>₹${itemTotal}</span>
       </div>
-    `;
+    `);
   });
 
-  if (total <= 0) {
-    alert("Invalid cart data");
-    location.href = "cart.html";
-    return;
-  }
-
-  summaryBox.innerHTML += `
+  summaryBox.insertAdjacentHTML("beforeend", `
     <div class="summary-total">
       <strong>Total</strong>
       <strong>₹${total}</strong>
     </div>
-  `;
+  `);
 
   /* ================= PLACE ORDER ================= */
-  orderBtn.onclick = async () => {
-
-    if (!userAddress) {
-      alert("Please add address in profile");
-      return;
-    }
+  orderBtn.addEventListener("click", () => {
 
     orderBtn.disabled = true;
     orderBtn.textContent = "Placing Order...";
 
-    try {
-      const payload = {
-        items: cart.map(i => ({
-          name: i.name,
-          price: Number(i.price),
-          qty: Number(i.qty) || 1
-        })),
-        total: Number(total)
-      };
+    const orderData = {
+      items: cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.qty
+      })),
+      total
+    };
 
-      const res = await fetch(API_ORDERS, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": USER_ID
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw data;
-
-      /* ===== STORE ORDER FOR SUCCESS PAGE ===== */
-      localStorage.setItem("last_order_id", data.orderId);
-      localStorage.setItem("last_order_items", JSON.stringify(payload.items));
-      localStorage.setItem("last_order_total", total);
-
+    fetch(API_ORDERS, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": USER_ID
+      },
+      body: JSON.stringify(orderData)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Order failed");
+      return res.json();
+    })
+    .then(() => {
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
-
-    } catch (err) {
-      console.error("ORDER ERROR:", err);
-      alert(err?.error || "Failed to place order");
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Order failed. Try again.");
       orderBtn.disabled = false;
       orderBtn.textContent = "Place Order";
-    }
-  };
+    });
+  });
 
 });
 </script>
+
 
 </body>
 </html>
