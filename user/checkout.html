@@ -163,7 +163,7 @@ input{
 <script>
 "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   /* ================= CONFIG ================= */
   const BASE_URL    = window.APP_CONFIG.API_BASE;
@@ -196,31 +196,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const summaryBox  = document.getElementById("summary");
   const orderBtn    = document.getElementById("orderBtn");
 
-  let userAddress = "";
+  let userProfile = {};
 
-  /* ================= LOAD PROFILE ================= */
-  fetch(API_PROFILE, {
-    headers: { "x-user-id": USER_ID }
-  })
-  .then(r => r.ok ? r.json() : {})
-  .then(u => {
-    nameInput.value  = u.name || "";
-    phoneInput.value = u.phone || "";
-    userAddress      = u.address || "";
+  /* ================= LOAD PROFILE (AUTO-FILL) ================= */
+  try {
+    const res = await fetch(API_PROFILE, {
+      headers: { "x-user-id": USER_ID }
+    });
+
+    if (res.ok) {
+      userProfile = await res.json();
+    }
+
+    nameInput.value  = userProfile.name || "";
+    phoneInput.value = userProfile.phone || "";
 
     addressList.innerHTML = `
       <div class="address-card">
-        📍 ${userAddress || "Address not provided"}
+        📍 ${userProfile.address || "Address not provided"}
       </div>
     `;
-  })
-  .catch(() => {
+
+  } catch {
     addressList.innerHTML = `
       <div class="address-card">
         📍 Address not provided
       </div>
     `;
-  });
+  }
 
   /* ================= ORDER SUMMARY ================= */
   let total = 0;
@@ -248,8 +251,9 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ================= PLACE ORDER ================= */
   orderBtn.onclick = async () => {
 
-    if (!userAddress) {
-      alert("Please add address in profile");
+    if (!userProfile.address) {
+      alert("Please complete your profile before ordering");
+      location.href = "profile.html";
       return;
     }
 
@@ -290,6 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 </script>
+
 
 </body>
 </html>

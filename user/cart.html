@@ -181,6 +181,15 @@ const CART_KEY = "jd_cart";
 const FALLBACK = "https://via.placeholder.com/150";
 const cartBox = document.getElementById("cartBox");
 
+/* ================= USER (NO LOGIN) ================= */
+const USER_ID =
+  localStorage.getItem("jd_user_id") ||
+  (() => {
+    const id = "guest_" + Date.now();
+    localStorage.setItem("jd_user_id", id);
+    return id;
+  })();
+
 /* ================= STATE ================= */
 let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
 
@@ -197,7 +206,7 @@ function renderCart() {
   cartBox.innerHTML = "";
 
   cart.forEach((item, i) => {
-    total += item.price * item.qty;
+    total += Number(item.price) * Number(item.qty);
 
     cartBox.insertAdjacentHTML("beforeend", `
       <div class="cart-item">
@@ -236,19 +245,16 @@ function renderCart() {
 /* ================= EVENTS ================= */
 function bindEvents() {
   document.querySelectorAll(".qty-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.onclick = () =>
       changeQty(+btn.dataset.index, +btn.dataset.change);
-    });
   });
 
   document.querySelectorAll(".remove-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      removeItem(+btn.dataset.index);
-    });
+    btn.onclick = () => removeItem(+btn.dataset.index);
   });
 
   const checkoutBtn = document.getElementById("checkoutBtn");
-  if (checkoutBtn) checkoutBtn.addEventListener("click", goCheckout);
+  if (checkoutBtn) checkoutBtn.onclick = goCheckout;
 }
 
 /* ================= ACTIONS ================= */
@@ -270,12 +276,11 @@ function save() {
 
 /* ================= CHECKOUT ================= */
 function goCheckout() {
-  if (cart.length === 0) {
+  if (!cart.length) {
     alert("Your cart is empty");
     return;
   }
 
-  // ✅ CORRECT CHECKOUT PAGE (GitHub Pages)
   location.href =
     "https://nithinkumar-afk.github.io/jd-ecommerce-frontend/user/checkout.html";
 }
