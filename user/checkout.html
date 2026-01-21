@@ -222,12 +222,12 @@ document.addEventListener("DOMContentLoaded", () => {
   summaryBox.innerHTML = "";
 
   cart.forEach(i => {
-    const price = Number(i.price) || 0;
+    const price = Number(i.price);
     const qty   = Number(i.qty) || 1;
-    const lineTotal = price * qty;
 
     if (price <= 0 || qty <= 0) return;
 
+    const lineTotal = price * qty;
     total += lineTotal;
 
     summaryBox.innerHTML += `
@@ -272,8 +272,6 @@ document.addEventListener("DOMContentLoaded", () => {
         total: Number(total)
       };
 
-      console.log("ORDER PAYLOAD:", payload);
-
       const res = await fetch(API_ORDERS, {
         method: "POST",
         headers: {
@@ -286,13 +284,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!res.ok) throw data;
 
-      /* ===== ADDED (as requested) ===== */
+      /* ===== STORE ORDER FOR SUCCESS PAGE ===== */
       localStorage.setItem("last_order_id", data.orderId);
       localStorage.setItem("last_order_items", JSON.stringify(payload.items));
       localStorage.setItem("last_order_total", total);
-      localStorage.removeItem("jd_cart");
-      location.href = "success.html";
-      /* =============================== */
 
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";

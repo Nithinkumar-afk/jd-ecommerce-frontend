@@ -217,11 +217,8 @@ const avatar = document.getElementById("avatar");
 const saveBtn = document.getElementById("saveBtn");
 
 /* ================= USER ================= */
-const USER_ID = localStorage.getItem("jd_user_id");
-if (!USER_ID) {
-  alert("Please login first");
-  location.href = "../index.html";
-}
+/* AUTH REMOVED */
+const USER_ID = localStorage.getItem("jd_user_id") || "guest";
 
 /* ================= LOAD PROFILE ================= */
 fetch(API_PROFILE, {
@@ -229,16 +226,24 @@ fetch(API_PROFILE, {
 })
 .then(res => res.json())
 .then(user => {
+
   nameI.value = user.name || "";
   phoneI.value = user.phone || "";
   altPhoneI.value = user.alt_phone || "";
   addressI.value = user.address || "";
 
   if (user.image) {
-    img.src = BASE_URL + user.image;
+    img.src = BASE_URL + user.image + "?t=" + Date.now(); // cache bust
     img.hidden = false;
     avatar.hidden = true;
+  } else {
+    img.hidden = true;
+    avatar.hidden = false;
   }
+
+})
+.catch(() => {
+  console.warn("Profile not loaded (guest mode)");
 });
 
 /* ================= SAVE PROFILE ================= */
@@ -267,17 +272,25 @@ saveBtn.onclick = () => {
   .then(res => res.json())
   .then(() => {
     alert("Profile saved successfully ✅");
-    location.reload();
+
+    /* FAST IMAGE UPDATE */
+    if (imageI.files.length > 0) {
+      img.src = URL.createObjectURL(imageI.files[0]);
+      img.hidden = false;
+      avatar.hidden = true;
+    }
   })
   .catch(() => alert("Failed to save profile"));
 };
 
 /* ================= LOGOUT ================= */
+/* OPTIONAL – keeps working */
 function logout() {
   localStorage.clear();
   location.href = "../index.html";
 }
 </script>
+
 
 </body>
 </html>
