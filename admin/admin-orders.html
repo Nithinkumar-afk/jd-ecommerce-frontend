@@ -135,12 +135,13 @@ header a{
   <a href="admin-dashboard.html">← Dashboard</a>
 </header>
 
+<!-- ✅ FILTERS FIXED (UPPERCASE VALUES) -->
 <div class="filters">
   <button class="active" onclick="setFilter('ALL',this)">All</button>
-  <button onclick="setFilter('Placed',this)">Placed</button>
-  <button onclick="setFilter('Shipped',this)">Shipped</button>
-  <button onclick="setFilter('Delivered',this)">Delivered</button>
-  <button onclick="setFilter('Cancelled',this)">Cancelled</button>
+  <button onclick="setFilter('PLACED',this)">Placed</button>
+  <button onclick="setFilter('SHIPPED',this)">Shipped</button>
+  <button onclick="setFilter('DELIVERED',this)">Delivered</button>
+  <button onclick="setFilter('CANCELLED',this)">Cancelled</button>
 </div>
 
 <div class="container" id="orders">Loading...</div>
