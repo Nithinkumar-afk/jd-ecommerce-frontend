@@ -149,49 +149,58 @@ header a{
 <script>
 "use strict";
 
-/* PAGE LOAD */
-window.addEventListener("load",()=>{
-  document.body.classList.add("loaded");
-});
-
-/* CONFIG */
 const API = window.APP_CONFIG.API_BASE;
+let allOrders = [];
+let currentFilter = "ALL";
 
-/* SIMPLE FETCH */
-async function apiFetch(url, options = {}){
+/* API FETCH */
+async function apiFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
-    headers:{
-      "Content-Type":"application/json",
+    headers: {
+      "Content-Type": "application/json",
       ...(options.headers || {})
     }
   });
 
-  if(!res.ok){
-    throw new Error("Request failed");
-  }
-
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data;
 }
 
-/* STATE */
-let allOrders = [];
-let currentFilter = "ALL";
-
-/* LOAD ORDERS */
-async function loadOrders(){
-  try{
+/* LOAD */
+async function loadOrders() {
+  try {
     allOrders = await apiFetch(API + "/api/orders/admin");
     renderOrders();
-  }catch(err){
-    console.error(err);
+  } catch {
     document.getElementById("orders").innerHTML =
-      "<p style='color:red'>Error loading orders</p>";
+      "<p style='color:red'>Failed to load orders</p>";
   }
+}
+
+/* UPDATE STATUS */
+async function updateStatus(id, status) {
+  try {
+    await apiFetch(`${API}/api/orders/${id}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ status })
+    });
+    loadOrders();
+  } catch (e) {
+    alert(e.error || "Failed to update status");
+  }
+}
+
+/* DELETE */
+async function deleteOrder(id) {
+  if (!confirm("Delete order?")) return;
+  await apiFetch(`${API}/api/orders/${id}`, { method: "DELETE" });
+  loadOrders();
 }
 
 /* FILTER */
-function setFilter(status, btn){
+function setFilter(status, btn) {
   currentFilter = status;
   document.querySelectorAll(".filters button")
     .forEach(b => b.classList.remove("active"));
@@ -199,35 +208,8 @@ function setFilter(status, btn){
   renderOrders();
 }
 
-/* UPDATE STATUS */
-async function updateStatus(id, status){
-  try{
-    await apiFetch(`${API}/api/orders/${id}/status`, {
-      method:"PUT",
-      body:JSON.stringify({ status })
-    });
-    loadOrders();
-  }catch{
-    alert("Failed to update status");
-  }
-}
-
-/* DELETE ORDER */
-async function deleteOrder(id){
-  if(!confirm("Delete this order?")) return;
-
-  try{
-    await apiFetch(`${API}/api/orders/${id}`, {
-      method:"DELETE"
-    });
-    loadOrders();
-  }catch{
-    alert("Failed to delete order");
-  }
-}
-
 /* RENDER */
-function renderOrders(){
+function renderOrders() {
   const div = document.getElementById("orders");
   div.innerHTML = "";
 
@@ -235,21 +217,19 @@ function renderOrders(){
     ? allOrders
     : allOrders.filter(o => o.status === currentFilter);
 
-  if(!list.length){
-    div.innerHTML = "<p>No orders found</p>";
+  if (!list.length) {
+    div.innerHTML = "<p>No orders</p>";
     return;
   }
 
-  list.forEach(o=>{
+  list.forEach(o => {
     div.innerHTML += `
       <div class="order">
         <b>Order #${o.id}</b><br>
-        <b>User:</b> ${o.user_id}<br>
-        <b>Total:</b> ₹${Number(o.total).toLocaleString("en-IN")}
+        User: ${o.user_id}<br>
+        Total: ₹${Number(o.total_amount).toLocaleString("en-IN")}
 
-        <div class="status ${o.status}">
-          Status: ${o.status}
-        </div>
+        <div class="status">${o.status}</div>
 
         <div class="items">
           ${o.items.map(i =>
@@ -258,15 +238,9 @@ function renderOrders(){
         </div>
 
         <div class="actions">
-          <button onclick="updateStatus(${o.id},'SHIPPED')"
-            ${o.status!=="PLACED"?"disabled":""}>Ship</button>
-
-          <button onclick="updateStatus(${o.id},'DELIVERED')"
-            ${o.status!=="SHIPPED"?"disabled":""}>Deliver</button>
-
-          <button onclick="updateStatus(${o.id},'CANCELLED')"
-            ${o.status==="DELIVERED"?"disabled":""}>Cancel</button>
-
+          <button onclick="updateStatus(${o.id},'SHIPPED')" ${o.status!=="PLACED"?"disabled":""}>Ship</button>
+          <button onclick="updateStatus(${o.id},'DELIVERED')" ${o.status!=="SHIPPED"?"disabled":""}>Deliver</button>
+          <button onclick="updateStatus(${o.id},'CANCELLED')" ${o.status==="DELIVERED"?"disabled":""}>Cancel</button>
           <button onclick="deleteOrder(${o.id})">Delete</button>
         </div>
       </div>
@@ -274,9 +248,9 @@ function renderOrders(){
   });
 }
 
-/* INIT */
 loadOrders();
 </script>
+
 
 </body>
 </html>
