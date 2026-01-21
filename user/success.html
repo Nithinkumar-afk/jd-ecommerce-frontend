@@ -85,55 +85,42 @@ body{
 <script>
 "use strict";
 
-const BASE_URL = window.APP_CONFIG.API_BASE;
-const API_ORDERS = BASE_URL + "/api/orders";
-
+/* ================= AUTH CHECK ================= */
 const USER_ID = localStorage.getItem("jd_user_id");
 if (!USER_ID) {
-  alert("Please login");
+  alert("Please login first");
   location.href = "../index.html";
 }
 
-const CART_KEY = "jd_cart";
-const cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
+/* ================= LOAD LAST ORDER ================= */
+const orderId   = localStorage.getItem("last_order_id");
+const items     = JSON.parse(localStorage.getItem("last_order_items")) || [];
+const total     = localStorage.getItem("last_order_total");
 
-if (cart.length === 0) {
-  alert("Cart is empty");
+if (!orderId || !items.length) {
+  alert("No recent order found");
   location.href = "../index.html";
 }
 
-const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+/* ================= RENDER ================= */
+document.getElementById("orderId").textContent = orderId;
+document.getElementById("orderTotal").textContent = total;
 
-document.getElementById("orderBtn").onclick = () => {
-  fetch(API_ORDERS, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-user-id": USER_ID
-    },
-    body: JSON.stringify({
-      items: cart.map(i => ({
-        product_id: i.id,
-        price: Number(i.price),
-        quantity: Number(i.qty)
-      })),
-      total: Number(total)
-    })
-  })
-  .then(res => {
-    if (!res.ok) throw new Error("Order failed");
-    return res.json();
-  })
-  .then(data => {
-    localStorage.setItem("last_order_id", data.orderId);
-    localStorage.removeItem(CART_KEY);
-    location.href = "success.html";
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Order failed");
-  });
-};
+const orderItemsBox = document.getElementById("orderItems");
+orderItemsBox.innerHTML = "";
+
+items.forEach(i => {
+  orderItemsBox.innerHTML += `
+    <div class="item">
+      <span>${i.name} × ${i.qty}</span>
+      <span>₹${i.price * i.qty}</span>
+    </div>
+  `;
+});
+
+/* ================= CLEAN TEMP DATA ================= */
+localStorage.removeItem("last_order_items");
+localStorage.removeItem("last_order_total");
 </script>
 
 </body>

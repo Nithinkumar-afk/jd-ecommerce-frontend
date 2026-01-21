@@ -286,6 +286,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!res.ok) throw data;
 
+      /* ===== ADDED (as requested) ===== */
+      localStorage.setItem("last_order_id", data.orderId);
+      localStorage.setItem("last_order_items", JSON.stringify(payload.items));
+      localStorage.setItem("last_order_total", total);
+      localStorage.removeItem("jd_cart");
+      location.href = "success.html";
+      /* =============================== */
+
       localStorage.removeItem(CART_KEY);
       location.href = "success.html";
 
