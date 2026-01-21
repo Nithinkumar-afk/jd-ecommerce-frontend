@@ -30,7 +30,6 @@ body {
 
 body.loaded{opacity:1}
 
-/* HEADER */
 header {
   padding:18px 20px;
   font-size:22px;
@@ -48,9 +47,6 @@ header a{
   opacity:.85;
 }
 
-header a:hover{opacity:1}
-
-/* FILTERS */
 .filters {
   display:flex;
   gap:10px;
@@ -62,37 +58,31 @@ header a:hover{opacity:1}
   padding:10px 16px;
   border:none;
   border-radius:999px;
-  background:var(--card);
-  color:var(--text);
+  background:#111;
+  color:#fff;
   cursor:pointer;
-  font-size:14px;
 }
 
 .filters button.active {
-  background:var(--accent);
+  background:orange;
   color:#000;
 }
 
-/* CONTAINER */
 .container {
   padding:20px;
   max-width:1200px;
   margin:auto;
 }
 
-/* ORDER CARD */
 .order {
-  background:var(--card);
+  background:#111;
   padding:16px;
   border-radius:16px;
   margin-bottom:16px;
-  border:1px solid var(--border);
+  border:1px solid #222;
 }
 
-.status {
-  font-weight:600;
-  margin-top:6px;
-}
+.status { font-weight:600; margin-top:6px }
 
 .PLACED { color:orange }
 .SHIPPED { color:#38bdf8 }
@@ -102,11 +92,10 @@ header a:hover{opacity:1}
 .items {
   margin-top:10px;
   font-size:14px;
-  color:var(--muted);
+  color:#cbd5f5;
   line-height:1.6;
 }
 
-/* ACTIONS */
 .actions {
   display:flex;
   flex-wrap:wrap;
@@ -119,7 +108,6 @@ header a:hover{opacity:1}
   border:none;
   border-radius:10px;
   cursor:pointer;
-  font-size:14px;
 }
 
 .actions button:disabled{
@@ -127,10 +115,10 @@ header a:hover{opacity:1}
   cursor:not-allowed;
 }
 
-.ship { background:#0ea5e9; color:#000 }
-.deliver { background:#22c55e; color:#000 }
-.cancel { background:#ef4444; color:#000 }
-.delete { background:#6b7280; color:#000 }
+.ship { background:#0ea5e9 }
+.deliver { background:#22c55e }
+.cancel { background:#ef4444 }
+.delete { background:#6b7280 }
 
 @media (max-width:600px) {
   header { font-size:18px }
@@ -166,33 +154,47 @@ window.addEventListener("load",()=>{
   document.body.classList.add("loaded");
 });
 
-/* ================= SMOOTH NAV ================= */
-document.querySelectorAll(".nav-link").forEach(link=>{
-  link.addEventListener("click",e=>{
-    e.preventDefault();
-    const href = link.getAttribute("href");
-    document.body.style.opacity = 0;
-    setTimeout(()=>location.href = href,200);
-  });
-});
-
 /* ================= CONFIG ================= */
 const API = window.APP_CONFIG.API_BASE;
+const ADMIN_KEY = localStorage.getItem("ADMIN_API_KEY");
+
+/* ================= SECURITY ================= */
+if(!ADMIN_KEY){
+  alert("Admin login required");
+  location.href = "../index.html";
+}
+
+/* ================= FETCH HELPER ================= */
+async function apiFetch(url, options = {}){
+  const res = await fetch(url, {
+    ...options,
+    headers:{
+      "x-api-key": ADMIN_KEY,
+      "Content-Type":"application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  if(res.status === 401){
+    alert("Session expired");
+    localStorage.removeItem("ADMIN_API_KEY");
+    location.href = "../index.html";
+    throw new Error("Unauthorized");
+  }
+
+  return res.json();
+}
 
 /* ================= STATE ================= */
 let allOrders = [];
 let currentFilter = "ALL";
 
-/* ================= FETCH ORDERS ================= */
+/* ================= LOAD ORDERS ================= */
 async function loadOrders(){
-  try {
-    const res = await fetch(API + "/api/orders/admin");
-    if (!res.ok) throw new Error();
-
-    allOrders = await res.json();
+  try{
+    allOrders = await apiFetch(API + "/api/orders/admin");
     renderOrders();
-
-  } catch {
+  }catch{
     document.getElementById("orders").innerHTML =
       "<p style='color:red'>Error loading orders</p>";
   }
@@ -210,24 +212,23 @@ function setFilter(status, btn){
 /* ================= UPDATE STATUS ================= */
 async function updateStatus(id, status){
   try{
-    await fetch(`${API}/api/orders/${id}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
+    await apiFetch(`${API}/api/orders/${id}/status`, {
+      method:"PUT",
+      body:JSON.stringify({ status })
     });
     loadOrders();
   }catch{
-    alert("Failed to update order status");
+    alert("Failed to update status");
   }
 }
 
-/* ================= DELETE ORDER ================= */
+/* ================= DELETE ================= */
 async function deleteOrder(id){
   if(!confirm("Delete this order?")) return;
 
   try{
-    await fetch(`${API}/api/orders/${id}`, {
-      method: "DELETE"
+    await apiFetch(`${API}/api/orders/${id}`, {
+      method:"DELETE"
     });
     loadOrders();
   }catch{
@@ -244,12 +245,12 @@ function renderOrders(){
     ? allOrders
     : allOrders.filter(o => o.status === currentFilter);
 
-  if (!list.length) {
+  if(!list.length){
     div.innerHTML = "<p>No orders found</p>";
     return;
   }
 
-  list.forEach(o => {
+  list.forEach(o=>{
     div.innerHTML += `
       <div class="order">
         <b>Order #${o.id}</b><br>
@@ -269,26 +270,18 @@ function renderOrders(){
         <div class="actions">
           <button class="ship"
             onclick="updateStatus(${o.id},'SHIPPED')"
-            ${o.status !== "PLACED" ? "disabled" : ""}>
-            Ship
-          </button>
+            ${o.status!=="PLACED"?"disabled":""}>Ship</button>
 
           <button class="deliver"
             onclick="updateStatus(${o.id},'DELIVERED')"
-            ${o.status !== "SHIPPED" ? "disabled" : ""}>
-            Deliver
-          </button>
+            ${o.status!=="SHIPPED"?"disabled":""}>Deliver</button>
 
           <button class="cancel"
             onclick="updateStatus(${o.id},'CANCELLED')"
-            ${o.status === "DELIVERED" ? "disabled" : ""}>
-            Cancel
-          </button>
+            ${o.status==="DELIVERED"?"disabled":""}>Cancel</button>
 
           <button class="delete"
-            onclick="deleteOrder(${o.id})">
-            Delete
-          </button>
+            onclick="deleteOrder(${o.id})">Delete</button>
         </div>
       </div>
     `;
