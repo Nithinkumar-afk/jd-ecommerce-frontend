@@ -155,7 +155,7 @@ header a{
   <div id="usersList">Loading users...</div>
 </div>
 
-<!-- ✅ CONFIG -->
+<!-- CONFIG -->
 <script src="../config.js"></script>
 
 <script>
@@ -166,61 +166,40 @@ const API_BASE = window.APP_CONFIG?.API_BASE || "";
 const FALLBACK_IMG = "https://via.placeholder.com/80?text=User";
 const usersList = document.getElementById("usersList");
 
-/* ================= SAFETY CHECK ================= */
-if (!usersList) {
-  console.error("usersList element not found");
-}
-
-/* ================= HELPERS ================= */
-function formatDate(date) {
-  if (!date) return "—";
-  try {
-    return new Date(date).toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
-  } catch {
-    return "—";
-  }
-}
-
-/* ================= LOAD USERS ================= */
+/* ================= LOAD USERS (ADMIN) ================= */
 async function loadUsers() {
   try {
     usersList.innerHTML = "<p style='opacity:.6'>Loading users...</p>";
 
-    const res = await fetch(`${API_BASE}/api/users`);
+    const res = await fetch(`${API_BASE}/api/admin/users`, {
+      headers: {
+        "x-api-key": window.APP_CONFIG?.ADMIN_API_KEY || ""
+      }
+    });
+
     if (!res.ok) throw new Error("API error");
 
     const users = await res.json();
     usersList.innerHTML = "";
 
     if (!Array.isArray(users) || users.length === 0) {
-      usersList.innerHTML =
-        "<p style='opacity:.6'>No users available</p>";
+      usersList.innerHTML = "<p style='opacity:.6'>No users found</p>";
       return;
     }
 
     users.forEach(u => {
-      const joined = formatDate(u.created_at);
-      const imgSrc = u.image ? `${API_BASE}${u.image}` : FALLBACK_IMG;
+      const imgSrc = u.image ? API_BASE + u.image : FALLBACK_IMG;
 
       usersList.innerHTML += `
         <div class="user-card">
           <div class="user-img">
-            <img src="${imgSrc}"
-                 alt="User"
-                 onerror="this.src='${FALLBACK_IMG}'">
+            <img src="${imgSrc}" onerror="this.src='${FALLBACK_IMG}'">
           </div>
 
           <div class="user-info">
-            <p><strong>${u.name || "Guest User"}</strong></p>
+            <p><strong>${u.name || "Guest"}</strong></p>
             <p>📞 Phone: ${u.phone || "-"}</p>
             <p>🏠 Address: ${u.address || "-"}</p>
-            <p style="font-size:12px;opacity:.6">
-              Joined: ${joined}
-            </p>
           </div>
         </div>
       `;
