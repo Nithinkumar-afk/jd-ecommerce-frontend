@@ -165,7 +165,7 @@ input{
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  const BASE_URL = window.APP_CONFIG.API_BASE;
+  const BASE_URL   = window.APP_CONFIG.API_BASE;
   const API_PROFILE = BASE_URL + "/api/profile";
   const API_ORDERS  = BASE_URL + "/api/orders";
 
@@ -193,22 +193,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let userAddress = "";
 
-  /* LOAD PROFILE */
-  fetch(API_PROFILE, { headers: { "x-user-id": USER_ID }})
-    .then(r => r.json())
-    .then(u => {
-      nameInput.value = u.name || "";
-      phoneInput.value = u.phone || "";
-      userAddress = u.address || "";
+  /* ================= LOAD PROFILE ================= */
+  fetch(API_PROFILE, {
+    headers: { "x-user-id": USER_ID }
+  })
+  .then(r => r.json())
+  .then(u => {
+    nameInput.value  = u.name || "";
+    phoneInput.value = u.phone || "";
+    userAddress      = u.address || "";
 
-      addressList.innerHTML = `
-        <div class="address-card">
-          📍 ${userAddress || "Address not provided"}
-        </div>
-      `;
-    });
+    addressList.innerHTML = `
+      <div class="address-card">
+        📍 ${userAddress || "Address not provided"}
+      </div>
+    `;
+  });
 
-  /* SUMMARY */
+  /* ================= SUMMARY ================= */
   let total = 0;
   summaryBox.innerHTML = "";
 
@@ -231,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
   `;
 
-  /* PLACE ORDER */
+  /* ================= PLACE ORDER ================= */
   orderBtn.onclick = async () => {
 
     if (!userAddress) {
@@ -245,9 +247,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const payload = {
         items: cart.map(i => ({
-          product_id: i.product_id,   // 🔥 MUST EXIST
-          price: Number(i.price),
-          quantity: Number(i.qty)
+          name: i.name,                 // ✅ REQUIRED
+          price: Number(i.price),       // ✅ REQUIRED
+          qty: Number(i.qty)            // ✅ REQUIRED
         })),
         total: Number(total)
       };
