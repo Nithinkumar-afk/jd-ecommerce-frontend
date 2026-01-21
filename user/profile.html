@@ -205,7 +205,7 @@ if (USER_ID) {
   .catch(()=>{});
 }
 
-/* ================= SAVE PROFILE ================= */
+/* ================= SAVE PROFILE (FIXED) ================= */
 saveBtn.onclick = async () => {
 
   if (!nameI.value || !phoneI.value || !addressI.value) {
@@ -213,19 +213,16 @@ saveBtn.onclick = async () => {
     return;
   }
 
-  /* ✅ STABLE USER ID (PHONE BASED) */
-  USER_ID = "jd_user_" + phoneI.value.trim();
+  const USER_ID = "jd_user_" + phoneI.value.trim();
   localStorage.setItem("jd_user_id", USER_ID);
 
   const fd = new FormData();
   fd.append("name", nameI.value);
   fd.append("phone", phoneI.value);
-  fd.append("alt_phone", altPhoneI.value); // ✅ FIX
+  fd.append("alt_phone", altPhoneI.value);
   fd.append("address", addressI.value);
 
-  if (imageI.files[0]) {
-    fd.append("image", imageI.files[0]);
-  }
+  if (imageI.files[0]) fd.append("image", imageI.files[0]);
 
   try {
     const res = await fetch(API_PROFILE, {
@@ -234,8 +231,7 @@ saveBtn.onclick = async () => {
       body: fd
     });
 
-    const data = await res.json();
-    if (!res.ok) throw data;
+    if (!res.ok) throw new Error();
 
     alert("Profile saved successfully ✅");
 
@@ -245,9 +241,8 @@ saveBtn.onclick = async () => {
       avatar.hidden = true;
     }
 
-  } catch (err) {
-    console.error(err);
-    alert(err?.error || "Save failed ❌");
+  } catch {
+    alert("Save failed ❌");
   }
 };
 
@@ -257,8 +252,6 @@ function logout() {
   location.href = "../index.html";
 }
 </script>
-
-
 
 </body>
 </html>
