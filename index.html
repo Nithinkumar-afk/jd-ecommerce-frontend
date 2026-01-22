@@ -73,7 +73,24 @@ header{
 }
 
 /* UPDATED AVATAR (IMAGE SUPPORT) */
-/* Removed avatar CSS since we no longer show it */
+.avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  overflow:hidden;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  flex-shrink:0;
+}
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
 .profile-menu{
   position:absolute;
   top:55px;
@@ -245,9 +262,15 @@ header{
 
   <div class="header-right">
     <div class="profile-wrapper">
-      <button class="profile-btn" onclick="location.href='user/orders.html'">
-        View Orders
-      </button>
+      <div class="profile-btn" id="profileBtn">
+        
+        <span id="profileName">profile</span>
+      </div>
+      <div class="profile-menu" id="profileMenu">
+        <button onclick="location.href='user/orders.html'">📦 My Orders</button>
+        <button onclick="location.href='user/profile.html'">👤 Profile</button>
+        <button class="logout" onclick="logout()">🚪 Logout</button>
+      </div>
     </div>
 
     <a href="user/checkout.html" class="checkout">Checkout</a>
@@ -290,9 +313,24 @@ const modal = document.getElementById("modal");
 const modalImg = document.getElementById("modalImg");
 const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
+const profileMenu = document.getElementById("profileMenu");
+const profileBtn = document.getElementById("profileBtn");
+const profileName = document.getElementById("profileName");
+const avatarBox = document.getElementById("avatar");
 
 /* ========= AUTO PROFILE LOAD ========= */
-// Removed auto-profile JS since we no longer use avatar or Guest name
+(function loadUser(){
+  const user = JSON.parse(localStorage.getItem("jd_user"));
+  if(!user) return;
+
+  profileName.textContent = user.name || "User";
+
+  if(user.avatar){
+    avatarBox.innerHTML = `<img src="${user.avatar.startsWith('http')?user.avatar:API+user.avatar}" onerror="this.remove()">`;
+  }else{
+    avatarBox.textContent = (user.name||"U")[0].toUpperCase();
+  }
+})();
 
 function updateCartCount(){
   cartCount.textContent = cart.reduce((s,i)=>s+(i.qty||1),0);
@@ -303,6 +341,19 @@ function showToast(msg){
   toast.textContent = msg;
   toast.classList.add("show");
   setTimeout(()=>toast.classList.remove("show"),2000);
+}
+
+profileBtn.onclick = e => {
+  e.stopPropagation();
+  profileMenu.style.display =
+    profileMenu.style.display==="flex"?"none":"flex";
+};
+document.onclick = () => profileMenu.style.display="none";
+
+function logout(){
+  localStorage.removeItem("jd_user");
+  localStorage.removeItem("jd_user_id");
+  location.reload();
 }
 
 fetch(API_PRODUCTS)
